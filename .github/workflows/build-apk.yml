@@ -1,5 +1,5 @@
 
-name: Build Together Church APK
+name: Build Two Together Church APKs
 
 on:
   workflow_dispatch:
@@ -11,6 +11,20 @@ jobs:
   build-apk:
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: Pastor-Admin
+            source: apps/pastor
+            app_id: org.togetherchurch.skyline.pastor
+            app_name: Together Church Pastor
+
+          - variant: Member
+            source: apps/member
+            app_id: org.togetherchurch.skyline.member
+            app_name: Together Church Member
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -20,69 +34,81 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Setup Java 21
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: '17'
 
-      - name: Prepare Together Church files
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Extract Together Church ZIP
         run: |
-          mkdir -p www extracted
+          mkdir -p extracted
 
-          if [ -f index.html ]; then
-            cp -a . www/ 2>/dev/null || true
-          else
-            ZIP_FILE=$(find . -maxdepth 1 -name '*.zip' -print -quit)
+          ZIP_FILE=$(find . -maxdepth 1 -type f -iname '*.zip' -print -quit)
 
-            if [ -z "$ZIP_FILE" ]; then
-              echo "ERROR: Walang ZIP file o index.html!"
-              exit 1
-            fi
-
-            unzip -q "$ZIP_FILE" -d extracted
-
-            INDEX_FILE=$(find extracted -type f -name index.html -print -quit)
-
-            if [ -z "$INDEX_FILE" ]; then
-              echo "ERROR: Walang index.html sa ZIP!"
-              exit 1
-            fi
-
-            WEB_DIR=$(dirname "$INDEX_FILE")
-            cp -a "$WEB_DIR"/. www/
+          if [ -z "$ZIP_FILE" ]; then
+            echo "ERROR: Upload the project ZIP to repository root."
+            exit 1
           fi
 
-          test -f www/index.html
+          unzip -q "$ZIP_FILE" -d extracted
 
-      - name: Initialize Capacitor
+          PROJECT_DIR="$GITHUB_WORKSPACE/extracted/Together_Church_Skyline_GitHub_APK_Project"
+
+          test -f "$PROJECT_DIR/package.json"
+          test -f "$PROJECT_DIR/capacitor.config.json"
+          test -f "$PROJECT_DIR/${{ matrix.source }}/index.html"
+
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+
+      - name: Install Capacitor
         run: |
-          npm init -y
-          npm install @capacitor/core@7 @capacitor/cli@7 @capacitor/android@7
+          cd "$PROJECT_DIR"
+          npm install
+          npm install @capacitor/android@6.2.1
 
-          npx cap init "Together Church" "com.emilgapa.togetherchurch" --web-dir www
+      - name: Prepare selected application
+        run: |
+          cd "$PROJECT_DIR"
 
+          mkdir -p www
+          cp "${{ matrix.source }}/index.html" www/index.html
+
+          node -e "
+          const fs = require('fs');
+          const c = JSON.parse(fs.readFileSync('capacitor.config.json'));
+          c.appId = '${{ matrix.app_id }}';
+          c.appName = '${{ matrix.app_name }}';
+          c.webDir = 'www';
+          fs.writeFileSync('capacitor.config.json', JSON.stringify(c,null,2));
+          "
+
+      - name: Add Android platform
+        run: |
+          cd "$PROJECT_DIR"
           npx cap add android
           npx cap sync android
 
-      - name: Add Android permissions
+      - name: Add microphone permissions
         run: |
+          cd "$PROJECT_DIR"
           MANIFEST="android/app/src/main/AndroidManifest.xml"
 
-          if ! grep -q "android.permission.RECORD_AUDIO" "$MANIFEST"; then
-            sed -i '/<application/i\    <uses-permission android:name="android.permission.RECORD_AUDIO" />' "$MANIFEST"
-            sed -i '/<application/i\    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />' "$MANIFEST"
-          fi
+          sed -i '/<application/i\    <uses-permission android:name="android.permission.RECORD_AUDIO" />' "$MANIFEST"
+          sed -i '/<application/i\    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />' "$MANIFEST"
 
       - name: Build Android APK
         run: |
-          cd android
+          cd "$PROJECT_DIR/android"
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Upload Together Church APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Together-Church-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: Together-Church-${{ matrix.variant }}-APK
+          path: extracted/Together_Church_Skyline_GitHub_APK_Project/android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
