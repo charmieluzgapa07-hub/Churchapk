@@ -1,0 +1,2243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Together Church Skyline — Pastor Admin</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f4f7f6;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* INITIAL AUTH GATE / BLURRED OVERLAY */
+        #authOverlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            padding: 15px;
+        }
+
+        .auth-card {
+            background: white;
+            padding: 25px 22px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 390px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+            animation: fadeIn 0.3s ease;
+            position: relative;
+        }
+
+        .auth-icon-circle {
+            width: 65px;
+            height: 65px;
+            background: #f4f7f6;
+            border: 3px solid #b50d7b;
+            border-radius: 50%;
+            margin: 0 auto 12px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            color: #b50d7b;
+        }
+
+        .auth-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #222;
+            margin-bottom: 4px;
+        }
+
+        .auth-sub {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .btn-signin-main {
+            width: 100%;
+            background-color: #00a65a;
+            color: white;
+            border: none;
+            padding: 13px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 10px rgba(0, 166, 90, 0.3);
+            transition: background 0.2s;
+        }
+        .btn-signin-main:hover { background-color: #008d4c; }
+
+        .btn-create-main {
+            width: 100%;
+            background: linear-gradient(135deg, #ff7e5f 0%, #feb47b 100%);
+            color: white;
+            border: none;
+            padding: 13px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            margin-bottom: 18px;
+            box-shadow: 0 4px 10px rgba(230, 126, 34, 0.3);
+        }
+
+        /* OAuth & Phone Login Buttons */
+        .social-auth-btn {
+            width: 100%;
+            padding: 11px 14px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #333;
+            cursor: pointer;
+            margin-bottom: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .social-auth-btn:hover {
+            background: #f8f9fa;
+            border-color: #bbb;
+        }
+
+        .social-auth-btn img {
+            width: 20px;
+            height: 20px;
+        }
+
+        .auth-divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 15px 0;
+            color: #888;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .auth-divider::before, .auth-divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #eee;
+        }
+        .auth-divider span {
+            padding: 0 10px;
+        }
+
+        .auth-back-btn {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .auth-footer-text {
+            font-size: 11px;
+            color: #888;
+            line-height: 1.4;
+            margin-top: 10px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* SIDEBAR STYLING (Responsive Mobile Drawer) */
+        #sidebar {
+            width: 240px;
+            background-color: #1a1a2e;
+            color: #b8b9c1;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            overflow-y: auto;
+            border-right: 3px solid #b50d7b;
+            transition: all 0.3s ease;
+            z-index: 999;
+        }
+
+        .sidebar-header {
+            background-color: #b50d7b;
+            color: #ffffff;
+            padding: 15px;
+            font-weight: bold;
+            font-size: 13px;
+            letter-spacing: 0.5px;
+            text-align: center;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 5px 0;
+        }
+
+        .sidebar-item {
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .sidebar-item:hover, .sidebar-item.active {
+            background-color: #162447;
+            color: #ffffff;
+            border-left: 4px solid #b50d7b;
+        }
+
+        .sidebar-section-title {
+            padding: 10px 15px 5px 15px;
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #707582;
+            font-weight: bold;
+        }
+
+        /* MAIN CONTAINER */
+        #mainContainer {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        /* TOP HEADER */
+        #topHeader {
+            background-color: #b50d7b;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .toggle-btn {
+            background: #990a68;
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 4px;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .top-icon-btn {
+            background: #990a68;
+            color: white;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        /* CONTENT BODY & PAGES */
+        .content-body {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background-color: #f4f7f6;
+        }
+
+        .page-view { display: none; }
+        .page-view.active { display: block; }
+
+        .welcome-title {
+            font-size: 20px;
+            color: #222;
+            margin-bottom: 2px;
+            font-weight: bold;
+        }
+
+        .welcome-sub {
+            font-size: 16px;
+            color: #444;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        /* METRIC CARDS GRID */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .metric-card {
+            border-radius: 10px;
+            color: white;
+            padding: 15px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 100px;
+        }
+
+        .metric-card.purple { background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%); }
+        .metric-card.orange { background: linear-gradient(135deg, #ff9966 0%, #ff5e62 100%); }
+        .metric-card.teal   { background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%); }
+        .metric-card.pink   { background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%); }
+        .metric-card.magenta{ background: linear-gradient(135deg, #b50d7b 0%, #810857 100%); }
+        .metric-card.dark   { background: #333; }
+
+        .card-number { font-size: 28px; font-weight: bold; }
+        .card-label { font-size: 13px; font-weight: 600; margin-top: 2px; }
+        .card-subtext { font-size: 11px; opacity: 0.9; margin-top: 6px; line-height: 1.2; }
+
+        /* DASHBOARD SECTION LAYOUT */
+        .dash-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .section-card {
+            background: white;
+            border-radius: 10px;
+            padding: 18px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 15px;
+        }
+
+        .section-card-title {
+            font-size: 15px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid #f0f0f0;
+            padding-bottom: 8px;
+        }
+
+        .info-list { list-style: none; }
+        .info-item {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            font-size: 12px;
+            color: #444;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .info-item:last-child { border-bottom: none; }
+
+        /* DIRECTORY TABLE STYLING */
+        .directory-top-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .search-input {
+            padding: 8px 12px;
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .btn-group { display: flex; gap: 8px; width: 100%; }
+
+        .btn-green-add {
+            background-color: #00a65a;
+            color: white;
+            border: none;
+            padding: 9px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 12px;
+            flex: 1;
+        }
+
+        .btn-red-clear {
+            background-color: #dd4b39;
+            color: white;
+            border: none;
+            padding: 9px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 12px;
+            flex: 1;
+        }
+
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 550px;
+        }
+
+        .data-table th {
+            background-color: #e9ecef;
+            color: #333;
+            text-align: left;
+            padding: 10px 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .data-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #f4f4f4;
+            font-size: 12px;
+            color: #333;
+            vertical-align: middle;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid #ddd;
+        }
+
+        .badge-active {
+            background-color: #b50d7b;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .badge-inactive {
+            background-color: #777;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .action-btn {
+            background: transparent;
+            border: 1px solid #00a65a;
+            color: #00a65a;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-right: 3px;
+        }
+
+        .action-btn.delete {
+            border-color: #dd4b39;
+            color: #dd4b39;
+        }
+
+        /* QUICK ACTION BUTTONS */
+        .quick-actions-flex {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .qa-btn {
+            padding: 8px 14px;
+            border-radius: 20px;
+            border: none;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            flex: 1 1 calc(50% - 8px);
+            text-align: center;
+        }
+        .qa-btn.pink { background-color: #b50d7b; color: white; }
+        .qa-btn.white { background-color: white; border: 1px solid #ccc; color: #333; }
+        .qa-btn.orange { background-color: #ff9966; color: white; }
+
+        /* MY ACCOUNT SPECIFIC STYLES */
+        .account-profile-header {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .profile-img-container {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 12px auto;
+            cursor: pointer;
+        }
+
+        .profile-img-container img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #b50d7b;
+        }
+
+        .profile-img-overlay {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background: #b50d7b;
+            color: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .gmail-profile-mark {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 12px auto;
+            border-radius: 50%;
+            border: 3px solid #dce7df;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .gmail-profile-mark img {
+            width: 58px;
+            height: 58px;
+            object-fit: contain;
+        }
+
+        .account-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #222;
+        }
+
+        .account-role {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .connected-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background-color: #e6f9ed;
+            color: #00a65a;
+            border: 1px solid #00a65a;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        .account-details-pills {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .pill-item {
+            background-color: #f4f7f6;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #444;
+            font-weight: 500;
+        }
+
+        .pill-item.highlight {
+            background-color: #b50d7b;
+            color: white;
+            font-weight: bold;
+        }
+
+        .account-row-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 13px;
+        }
+
+        .account-row-item:last-child {
+            border-bottom: none;
+        }
+
+        .account-label-flex {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .account-logo {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+        }
+
+        .btn-small-outline {
+            background: transparent;
+            border: 1px solid #b50d7b;
+            color: #b50d7b;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.2s;
+        }
+
+        .btn-small-outline:hover {
+            background: #b50d7b;
+            color: white;
+        }
+
+        .btn-small-outline.disconnect {
+            border-color: #dd4b39;
+            color: #dd4b39;
+        }
+
+        .btn-small-outline.disconnect:hover {
+            background: #dd4b39;
+            color: white;
+        }
+
+        .form-card-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary-block {
+            width: 100%;
+            background-color: #00a65a;
+            color: white;
+            border: none;
+            padding: 11px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 13px;
+            margin-top: 5px;
+        }
+
+        .btn-primary-block:hover {
+            background-color: #008d4c;
+        }
+
+        .btn-logout {
+            width: 100%;
+            background-color: #dd4b39;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 3px 8px rgba(221, 75, 57, 0.2);
+            transition: background 0.2s;
+        }
+
+        .btn-logout:hover {
+            background-color: #c23321;
+        }
+
+        /* MODAL POPUP STYLING */
+        #modalOverlay, #signoutModalOverlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 15px;
+        }
+        
+        .modal-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 400px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-card h3 { margin-bottom: 12px; color: #333; font-size: 16px; }
+        .form-group { margin-bottom: 10px; }
+        .form-group label {
+            display: block;
+            font-size: 11px;
+            font-weight: bold;
+            margin-bottom: 4px;
+            color: #444;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        /* CELLPHONE / MOBILE RESPONSIVE MEDIA QUERIES */
+        @media (max-width: 768px) {
+            #sidebar {
+                position: fixed;
+                top: 0;
+                left: -240px;
+                height: 100%;
+                box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+            }
+            #sidebar.open {
+                left: 0;
+            }
+            .cards-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .dash-grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    
+        textarea.form-card-input { width:100%; padding:10px 12px; border:1px solid #ccc; border-radius:6px; font:13px Arial,sans-serif; resize:vertical; }
+        .record-row { padding:12px 0; border-bottom:1px solid #eee; display:flex; gap:10px; align-items:flex-start; justify-content:space-between; font-size:13px; }
+        .record-row:last-child { border-bottom:0; }
+        .record-main { min-width:0; flex:1; overflow-wrap:anywhere; }
+        .record-actions { display:flex; flex-wrap:wrap; gap:5px; }
+        .record-actions button { padding:5px 8px; border:1px solid #b50d7b; border-radius:5px; background:white; color:#b50d7b; cursor:pointer; font-size:11px; }
+        .record-actions button.danger { border-color:#dd4b39; color:#dd4b39; }
+        .empty-state { color:#777; font-size:13px; padding:10px 0; }
+        .metric-card, .quick-actions-flex button, .sidebar-item { cursor:pointer; }
+        @media(max-width:480px){ .record-row{flex-direction:column;} .record-actions{width:100%;} }
+
+
+        /* Refined, realistic church administration interface */
+        :root {
+          --ink:#202b36; --muted:#748091; --navy:#172b3a; --navy-2:#203b4c;
+          --green:#477b67; --green-dark:#356451; --gold:#c49a52; --paper:#f3f5f4;
+          --line:#e3e8e5; --white:#fff; --danger:#b94d4d;
+        }
+        * { font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif; }
+        body { background:var(--paper); color:var(--ink); }
+        #sidebar {
+          width:258px; background:var(--navy); border-right:0; color:#d7e0e2;
+          box-shadow:4px 0 18px rgba(20,35,45,.08);
+        }
+        .sidebar-header {
+          min-height:86px; display:flex; align-items:center; justify-content:center;
+          padding:18px 20px; text-align:left; font-size:13px; letter-spacing:1.1px;
+          line-height:1.55; background:var(--navy); border-bottom:1px solid rgba(255,255,255,.10);
+          position:relative;
+        }
+        .sidebar-header:before {
+          content:"T"; display:inline-flex; align-items:center; justify-content:center;
+          width:38px; height:38px; flex:0 0 38px; margin-right:12px;
+          border:1px solid rgba(196,154,82,.75); border-radius:9px; color:#e1bd7e;
+          font-family:Georgia,serif; font-size:24px; font-weight:500;
+        }
+        .sidebar-menu { padding:13px 10px 20px; }
+        .sidebar-section-title { padding:20px 13px 8px; color:#91a1a8; font-size:10px; letter-spacing:1.2px; }
+        .sidebar-item {
+          margin:2px 0; padding:11px 13px; min-height:42px; gap:12px;
+          border:0; border-radius:7px; color:#c7d1d5; font-size:13px; font-weight:500;
+          transition:background .18s ease,color .18s ease;
+        }
+        .sidebar-item:hover { background:rgba(255,255,255,.08); color:#fff; border-left:0; }
+        .sidebar-item.active {
+          background:var(--navy-2); color:#fff; border-left:0;
+          box-shadow:inset 3px 0 0 var(--gold);
+        }
+        #mainContainer { min-width:0; }
+        #topHeader {
+          min-height:66px; height:66px; padding:0 28px; background:#fff;
+          border-bottom:1px solid var(--line); box-shadow:none;
+        }
+        .toggle-btn,.top-icon-btn {
+          width:38px; height:38px; border:1px solid var(--line); border-radius:8px;
+          background:#fff; color:#52616d; transition:.18s ease;
+        }
+        .toggle-btn:hover,.top-icon-btn:hover { background:#f1f5f2; border-color:#cbd8d0; color:var(--green-dark); }
+        .content-body { padding:28px 30px 42px; overflow-y:auto; }
+        .welcome-title { color:var(--ink); font-size:25px; font-weight:650; letter-spacing:-.45px; margin-bottom:5px; }
+        .welcome-sub,.subtitle { color:var(--muted); font-size:13px; line-height:1.6; margin-bottom:22px; }
+        .cards-grid { gap:16px; margin:20px 0 22px; }
+        .metric-card {
+          min-height:124px; padding:19px 20px; border:1px solid var(--line);
+          border-radius:10px; background:#fff; box-shadow:0 2px 7px rgba(27,43,52,.035);
+          transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
+        }
+        .metric-card:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(27,43,52,.08); border-color:#cbd8d0; }
+        .metric-card.purple,.metric-card.orange,.metric-card.teal,.metric-card.pink {
+          background:#fff; border-top:3px solid var(--green);
+        }
+        .metric-card.orange { border-top-color:var(--gold); }
+        .metric-card.teal { border-top-color:#668c91; }
+        .metric-card.pink { border-top-color:#9b777d; }
+        .card-label { color:var(--muted); font-size:12px; font-weight:600; letter-spacing:.15px; }
+        .card-number { color:var(--ink); font-size:30px; font-weight:650; margin:9px 0 4px; }
+        .card-subtext { color:#8a949d; font-size:11px; }
+        .dash-grid-2 { gap:18px; margin-bottom:18px; }
+        .section-card {
+          padding:20px; margin-bottom:18px; border:1px solid var(--line); border-radius:10px;
+          background:#fff; box-shadow:0 2px 7px rgba(27,43,52,.025);
+        }
+        .section-card-title {
+          padding-bottom:13px; margin-bottom:13px; border-bottom:1px solid #edf0ee;
+          color:#44545e; font-size:11px; font-weight:700; letter-spacing:.9px;
+        }
+        .info-list { list-style:none; }
+        .info-item { padding:10px 0; border-bottom:1px solid #f0f2f1; color:#52616b; font-size:12px; line-height:1.55; }
+        .info-item:last-child { border-bottom:0; }
+        .info-item strong,.info-item b { color:#263640; font-weight:650; }
+        .quick-actions-flex { display:flex; flex-wrap:wrap; gap:9px; }
+        button,.qa-btn,.btn-primary-block,.btn-small-outline,.action-btn,.btn-green-add,.btn-red-clear {
+          font-family:inherit; font-weight:600; letter-spacing:.05px; transition:background .18s ease,border-color .18s ease,box-shadow .18s ease,transform .18s ease;
+        }
+        button { -webkit-tap-highlight-color:transparent; }
+        button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible {
+          outline:3px solid rgba(71,123,103,.2); outline-offset:2px;
+        }
+        .qa-btn {
+          min-height:39px; padding:9px 14px; border:1px solid #dbe3de; border-radius:7px;
+          background:#fff; color:#42544d; font-size:12px; box-shadow:none;
+        }
+        .qa-btn:hover { background:#f3f7f4; border-color:#b9cfc1; transform:translateY(-1px); }
+        .qa-btn.pink { background:var(--green); border-color:var(--green); color:#fff; }
+        .qa-btn.pink:hover { background:var(--green-dark); }
+        .qa-btn.orange { background:#f7f3ea; border-color:#e7dcc7; color:#80663b; }
+        .directory-top-actions { gap:9px; }
+        .btn-primary-block,.btn-green-add {
+          background:var(--green); border:1px solid var(--green); color:#fff;
+          padding:11px 16px; border-radius:7px; font-size:12px; box-shadow:none;
+        }
+        .btn-primary-block:hover,.btn-green-add:hover { background:var(--green-dark); border-color:var(--green-dark); }
+        .btn-small-outline,.action-btn {
+          background:#fff; border:1px solid #d7e0da; color:#4d6659; border-radius:6px;
+          padding:7px 10px; font-size:11px;
+        }
+        .btn-small-outline:hover,.action-btn:hover { background:#f2f6f3; border-color:#b9cfc1; }
+        .action-btn.delete,.record-actions button.danger { color:var(--danger); border-color:#ead2d2; background:#fff; }
+        .action-btn.delete:hover,.record-actions button.danger:hover { background:#fbf2f2; }
+        .btn-logout,.btn-red-clear { background:#a84c4c; border:1px solid #a84c4c; border-radius:7px; box-shadow:none; }
+        .btn-logout:hover,.btn-red-clear:hover { background:#913d3d; }
+        .form-group { margin-bottom:15px; }
+        .form-group label { color:#53616a; font-size:11px; font-weight:650; margin-bottom:6px; }
+        .form-group input,.form-group select,.form-card-input,textarea.form-card-input {
+          width:100%; min-height:40px; padding:10px 12px; border:1px solid #d9e1dc;
+          border-radius:7px; background:#fff; color:#293943; font-size:13px; box-shadow:none;
+        }
+        .form-group input::placeholder,.form-card-input::placeholder { color:#a2aaa6; }
+        .form-group input:focus,.form-group select:focus,.form-card-input:focus {
+          border-color:#83a995; outline:0; box-shadow:0 0 0 3px rgba(71,123,103,.10);
+        }
+        .table-wrapper { overflow-x:auto; }
+        .data-table { width:100%; border-collapse:collapse; font-size:12px; }
+        .data-table th { padding:11px 10px; background:#f6f8f6; color:#65736c; text-align:left; font-size:10px; letter-spacing:.6px; }
+        .data-table td { padding:12px 10px; border-bottom:1px solid #edf0ee; color:#46545c; }
+        .badge-active { display:inline-block; padding:4px 8px; border-radius:20px; background:#edf5ef; color:#477b59; font-size:10px; font-weight:650; }
+        .record-row { padding:14px 0; border-bottom:1px solid #edf0ee; font-size:12px; }
+        .record-main strong,.record-main b { color:#2c3b44; font-size:13px; }
+        .record-main small { display:block; color:#7d8983; margin-top:5px; line-height:1.5; }
+        .record-actions { gap:6px; }
+        .record-actions button { padding:7px 10px; border:1px solid #d7e0da; border-radius:6px; background:#fff; color:#4d6659; font-size:11px; }
+        .record-actions button:hover { background:#f2f6f3; }
+        .empty-state { padding:22px 10px; text-align:center; color:#8a9690; font-size:12px; }
+        .auth-card { border:1px solid rgba(255,255,255,.5); border-radius:12px; box-shadow:0 22px 70px rgba(0,0,0,.25); }
+        .auth-icon-circle { border:0; border-radius:10px; background:#edf4ef; color:var(--green); }
+        .auth-title { color:#263640; font-size:23px; letter-spacing:-.4px; }
+        .btn-signin-main { background:var(--green); border-radius:7px; box-shadow:none; }
+        .btn-signin-main:hover { background:var(--green-dark); }
+        .btn-create-main { background:#f3f6f3; color:#42604f; border:1px solid #dce6de; border-radius:7px; box-shadow:none; }
+        .btn-create-main:hover { background:#eaf1eb; }
+        .social-auth-btn { border-radius:7px; font-weight:600; }
+        .modal-card { border:1px solid var(--line); border-radius:12px; box-shadow:0 18px 55px rgba(0,0,0,.18); }
+        @media (max-width:768px) {
+          #topHeader { padding:0 14px; }
+          .content-body { padding:22px 16px 34px; }
+          #sidebar { width:258px; left:-258px; }
+          #sidebar.open { left:0; }
+          .welcome-title { font-size:22px; }
+          .cards-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+        }
+        @media (max-width:480px) {
+          .cards-grid { grid-template-columns:1fr 1fr; gap:10px; }
+          .metric-card { min-height:108px; padding:14px; }
+          .card-number { font-size:25px; }
+          .section-card { padding:15px; }
+          .quick-actions-flex { display:grid; grid-template-columns:1fr 1fr; }
+          .qa-btn { min-height:44px; padding:8px; }
+          .record-row { flex-direction:column; }
+          .record-actions { width:100%; }
+          .top-icon-btn { width:34px; height:34px; }
+        }
+
+
+        /* Consistent, crisp line icons — no emoji glyphs */
+        .ui-icon {
+          display:inline-block; width:17px; height:17px; flex:0 0 17px;
+          vertical-align:-3px; fill:none; stroke:currentColor; stroke-width:1.7;
+          stroke-linecap:round; stroke-linejoin:round; opacity:.92;
+        }
+        .sidebar-item .ui-icon { width:17px; height:17px; margin-right:9px; color:#aebfc0; }
+        .sidebar-item.active .ui-icon { color:#d8b878; }
+        .top-icon-btn .ui-icon,.toggle-btn .ui-icon { width:18px; height:18px; margin:0; }
+        .qa-btn .ui-icon,.btn-primary-block .ui-icon,.btn-small-outline .ui-icon,
+        .action-btn .ui-icon,.btn-green-add .ui-icon,.btn-logout .ui-icon {
+          width:15px; height:15px; margin-right:6px;
+        }
+        .welcome-title .ui-icon { width:21px; height:21px; margin-right:7px; color:var(--green); }
+        .section-card-title .ui-icon { width:15px; height:15px; margin-right:7px; color:#71877a; }
+        .info-item .ui-icon,.pill-item .ui-icon { width:14px; height:14px; margin-right:5px; color:#809487; }
+        .auth-icon-circle .ui-icon { width:30px; height:30px; }
+        .sidebar-item { display:flex; align-items:center; }
+        .top-icon-btn { display:inline-flex; align-items:center; justify-content:center; }
+
+    </style>
+</head>
+<body>
+
+    <!-- WELCOME AUTH GATE OVERLAY (WITH GMAIL, FACEBOOK, & PHONE OPTIONS) -->
+    <div id="authOverlay">
+        <!-- STEP 1: CHOICE SCREEN -->
+        <div class="auth-card" id="authStep1">
+            <div class="auth-icon-circle">⛪</div>
+            <div class="auth-title">Welcome</div>
+            <div class="auth-sub">Church Management Portal</div>
+            
+            <button class="btn-signin-main" onclick="showAuthForm('signin')">Sign In</button>
+            <button class="btn-create-main" onclick="showAuthForm('create')">Create Account</button>
+            
+            <div class="auth-footer-text">By continuing, you agree to our Terms and Privacy Policy</div>
+        </div>
+
+        <!-- STEP 2: SIGN IN / CREATE ACCOUNT FORM SCREEN -->
+        <div class="auth-card" id="authStep2" style="display:none;">
+            <button class="auth-back-btn" onclick="backToAuthChoice()" title="Back">←</button>
+            <div class="auth-title" id="authFormTitle" style="margin-top:10px;">Sign In</div>
+            <div class="auth-sub" id="authFormSub">Sign in using your church email and password</div>
+
+            <!-- Form inputs -->
+            <form onsubmit="handleAuthSubmit(event)">
+                <div class="form-group" id="groupFullName" style="display:none; text-align:left;">
+                    <label>Full Name</label>
+                    <input type="text" id="authFullName" class="form-card-input" placeholder="e.g. Emil Gapa">
+                </div>
+                <div class="form-group" style="text-align:left;">
+                    <label id="authContactLabel">Email Address</label>
+                    <input type="email" id="authContact" class="form-card-input" placeholder="pastor@example.com" autocomplete="email" required>
+                </div>
+                <div class="form-group" style="text-align:left;">
+                    <label>Password</label>
+                    <input type="password" id="authPassword" class="form-card-input" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-primary-block" id="authSubmitBtn" style="padding:12px; margin-top:10px;">Sign In</button>
+            </form>
+
+            <div class="auth-footer-text" id="authToggleFooter" style="margin-top:15px; cursor:pointer; color:#b50d7b; font-weight:bold;" onclick="toggleAuthMode()">
+                Need an account? Create one here
+            </div>
+        </div>
+    </div>
+
+    <!-- SIDEBAR NAVIGATION -->
+    <div id="sidebar">
+        <div class="sidebar-header">TOGETHER CHURCH SKYLINE</div>
+        <ul class="sidebar-menu">
+            <li class="sidebar-item active" onclick="switchPage('dashboard', this)"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg> Dashboard</li>
+            <li class="sidebar-item" onclick="switchPage('directory', this)"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg> Directory</li>
+            <li class="sidebar-item" onclick="switchPage('prayer', this)"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 12 5 9a2 2 0 0 0-3 3l6 7a3 3 0 0 0 2 1h4a3 3 0 0 0 2-1l6-7a2 2 0 0 0-3-3l-3 3"/><path d="M9 12V5a2 2 0 0 1 4 0v7M13 8a2 2 0 0 1 4 0v4M9 8a2 2 0 0 0-4 0v3"/></svg> Prayer Wall</li>
+            <li class="sidebar-item" onclick="switchPage('biblestudy', this)"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 7v14"/><path d="M3 5.5A2.5 2.5 0 0 1 5.5 3H12v18H5.5A2.5 2.5 0 0 0 3 23z"/><path d="M21 5.5A2.5 2.5 0 0 0 18.5 3H12v18h6.5a2.5 2.5 0 0 1 2.5 2z"/></svg> Bible Study</li>
+            <li class="sidebar-item" onclick="switchPage('groups', this)"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg> Groups</li>
+            <li class="sidebar-item" onclick="switchPage('calendar', this)"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg> Calendar</li>
+            <li class="sidebar-item" onclick="switchPage('todos', this)"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m5 12 4 4L19 6"/></svg> To Do's</li>
+            <li class="sidebar-item" onclick="switchPage('attendance', this)"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5V3h6v1.5M8 10h8M8 14h8M8 18h5"/></svg> Attendance</li>
+            <li class="sidebar-item" onclick="switchPage('giving', this)"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M16 8.5c-.7-.8-1.8-1.2-3.2-1.2-1.7 0-2.8.8-2.8 2s1 1.8 2.8 2.2 3.2 1 3.2 2.4-1.3 2.4-3.3 2.4c-1.5 0-2.8-.5-3.6-1.4M12 5v14"/></svg> Giving / Donations</li>
+            <li class="sidebar-item" onclick="switchPage('forms', this)"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/></svg> Forms / Registrations</li>
+            <li class="sidebar-item" onclick="switchPage('enews', this)"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg> eNews / Mass eMail</li>
+            <li class="sidebar-item" onclick="switchPage('resources', this)"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> Resources</li>
+            <li class="sidebar-item" onclick="switchPage('myaccount', this)"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg> My Account</li>
+            
+            <div class="sidebar-section-title">Support & Links</div>
+            <li class="sidebar-item" onclick="switchPage('support', this)"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.6 2.6 0 1 1 4.6 1.7c-1.2 1.1-2.1 1.5-2.1 3.3M12 17.5h.01"/></svg> Support</li>
+            <li class="sidebar-item" onclick="window.open('https://www.facebook.com/profile.php?id=61553592698387', '_blank')"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 3h14v18H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M7 3v18M11 8h5M11 12h5"/></svg> Follow Us on FB</li>
+        </ul>
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <div id="mainContainer">
+        <!-- TOP HEADER -->
+        <div id="topHeader">
+            <button class="toggle-btn" onclick="toggleSidebar()" title="Toggle Menu">☰</button>
+            <button class="top-icon-btn" onclick="switchPage('dashboard', null)" title="Home"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></button>
+            <button class="top-icon-btn" onclick="switchPage('enews', null)" title="Messages"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 8.7 3.9a8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/></svg></button>
+            <button class="top-icon-btn" onclick="switchPage('directory', null)" title="Files"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button>
+            <button class="top-icon-btn" onclick="switchPage('calendar', null)" title="Calendar"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></button>
+            <button class="top-icon-btn" onclick="switchPage('myaccount', null)" title="Profile"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></button>
+        </div>
+
+        <!-- DYNAMIC CONTENT BODY -->
+        <div class="content-body">
+
+            <!-- DASHBOARD PAGE -->
+            <div id="page-dashboard" class="page-view active">
+                <div class="welcome-title">Dashboard</div>
+                <div class="welcome-sub">Church administration overview</div>
+
+                <!-- QUICK STATS CARDS -->
+                <div class="cards-grid">
+                    <div class="metric-card purple" onclick="switchPage('groups', null)">
+                        <div>
+                            <div class="card-label">My Groups</div>
+                            <div class="card-number">3</div>
+                        </div>
+                        <div class="card-subtext">Worship Team, Usher, Youth</div>
+                    </div>
+
+                    <div class="metric-card orange" onclick="switchPage('attendance', null)">
+                        <div>
+                            <div class="card-label">Check-in & Out</div>
+                            <div class="card-number">48</div>
+                        </div>
+                        <div class="card-subtext">Today: 48</div>
+                    </div>
+
+                    <div class="metric-card teal" onclick="switchPage('prayer', null)">
+                        <div>
+                            <div class="card-label">Open Requests</div>
+                            <div class="card-number">5</div>
+                        </div>
+                        <div class="card-subtext">Prayer Requests</div>
+                    </div>
+
+                    <div class="metric-card pink" onclick="switchPage('todos', null)">
+                        <div>
+                            <div class="card-label">Pending To Do</div>
+                            <div class="card-number">2</div>
+                        </div>
+                        <div class="card-subtext">Tasks Pending</div>
+                    </div>
+                </div>
+
+                <!-- ANNOUNCEMENTS & UPCOMING EVENTS GRID -->
+                <div class="dash-grid-2">
+                    <div class="section-card">
+                        <div class="section-card-title"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m3 11 18-5v12L3 13z"/><path d="M11 15 13 21H8l-2-7M21 10l2-1M21 15l2 1"/></svg> ANNOUNCEMENTS & NEWS</div>
+                        <ul class="info-list">
+                            <li class="info-item"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg> <strong>Sunday Service:</strong> Every Sunday, 9:00 AM @ Main Hall</li>
+                            <li class="info-item"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg> <strong>Youth Fellowship:</strong> Nov 10, 6:00 PM</li>
+                            <li class="info-item"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg> <strong>Prayer Meeting:</strong> Every Wednesday, 7:00 PM</li>
+                            <li class="info-item"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg> <strong>Thanksgiving Service:</strong> Nov 23, 10:00 AM</li>
+                        </ul>
+                    </div>
+
+                    <div class="section-card">
+                        <div class="section-card-title"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg> UPCOMING EVENTS</div>
+                        <ul class="info-list">
+                            <li class="info-item">⛪ <strong>Sunday Service:</strong> Every Sunday, 9:00 AM To 12:00 PM @ CATALUNAN GRANDE SKYLINE VILLAGE</li>
+                            <li class="info-item"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 7v14"/><path d="M3 5.5A2.5 2.5 0 0 1 5.5 3H12v18H5.5A2.5 2.5 0 0 0 3 23z"/><path d="M21 5.5A2.5 2.5 0 0 0 18.5 3H12v18h6.5a2.5 2.5 0 0 1 2.5 2z"/></svg> <strong>Midweek Service:</strong> Every Wed 7:00 PM</li>
+                            <li class="info-item"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m8 12 2 2a2 2 0 0 0 3 0l3-3"/><path d="m3 11 5-5 4 2 3-1 6 5-5 6-3-2-3 2-7-7z"/></svg> <strong>Fellowship:</strong> Every Fri 6:00 PM</li>
+                            <li class="info-item"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 12 5 9a2 2 0 0 0-3 3l6 7a3 3 0 0 0 2 1h4a3 3 0 0 0 2-1l6-7a2 2 0 0 0-3-3l-3 3"/><path d="M9 12V5a2 2 0 0 1 4 0v7M13 8a2 2 0 0 1 4 0v4M9 8a2 2 0 0 0-4 0v3"/></svg> <strong>Prayer and Fastings:</strong> Every Sat 10:00 AM</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- MINISTRY SUMMARY & RECENT ACTIVITY -->
+                <div class="dash-grid-2">
+                    <div class="section-card">
+                        <div class="section-card-title"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg> MINISTRY SUMMARY</div>
+                        <div class="table-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Ministry</th>
+                                        <th>Members</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg> Worship Team</td><td>12</td><td><span class="badge-active">Active</span></td></tr>
+                                    <tr><td><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 12 5 9a2 2 0 0 0-3 3l6 7a3 3 0 0 0 2 1h4a3 3 0 0 0 2-1l6-7a2 2 0 0 0-3-3l-3 3"/><path d="M9 12V5a2 2 0 0 1 4 0v7M13 8a2 2 0 0 1 4 0v4M9 8a2 2 0 0 0-4 0v3"/></svg> Usher / Greeters</td><td>8</td><td><span class="badge-active">Active</span></td></tr>
+                                    <tr><td><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="7" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg> Youth Ministry</td><td>25</td><td><span class="badge-active">Active</span></td></tr>
+                                    <tr><td><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 7v14"/><path d="M3 5.5A2.5 2.5 0 0 1 5.5 3H12v18H5.5A2.5 2.5 0 0 0 3 23z"/><path d="M21 5.5A2.5 2.5 0 0 0 18.5 3H12v18h6.5a2.5 2.5 0 0 1 2.5 2z"/></svg> Sunday School</td><td>18</td><td><span class="badge-active">Active</span></td></tr>
+                                    <tr><td><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8z"/></svg> Outreach Team</td><td>10</td><td><span class="badge-active">Active</span></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="section-card">
+                        <div class="section-card-title"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> RECENT ACTIVITY</div>
+                        <ul class="info-list">
+                            <li class="info-item">✅ <strong>10:30 AM:</strong> 48 checked in for Sunday Service</li>
+                            <li class="info-item">✅ <strong>Yesterday:</strong> New member added: Mark Bautista</li>
+                            <li class="info-item">✅ <strong>Nov 01:</strong> Prayer request submitted: 5 new requests</li>
+                            <li class="info-item">✅ <strong>Oct 31:</strong> Monthly giving report finalized</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- QUICK ACTIONS -->
+                <div class="section-card">
+                    <div class="section-card-title">⚡ QUICK ACTIONS</div>
+                    <div class="quick-actions-flex">
+                        <button class="qa-btn pink" onclick="switchPage('directory', null); openAddModal();">➕ Add New Member</button>
+                        <button class="qa-btn white" onclick="switchPage('giving', null)"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/></svg> Record Giving</button>
+                        <button class="qa-btn white" onclick="switchPage('prayer', null)"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 12 5 9a2 2 0 0 0-3 3l6 7a3 3 0 0 0 2 1h4a3 3 0 0 0 2-1l6-7a2 2 0 0 0-3-3l-3 3"/><path d="M9 12V5a2 2 0 0 1 4 0v7M13 8a2 2 0 0 1 4 0v4M9 8a2 2 0 0 0-4 0v3"/></svg> View Prayers</button>
+                        <button class="qa-btn orange" onclick="switchPage('calendar', null)"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg> Create Event</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- MEMBER DIRECTORY PAGE -->
+            <div id="page-directory" class="page-view">
+                <div class="welcome-title">Member Directory</div>
+                <div class="subtitle">Church Directory Database</div>
+
+                <div class="directory-top-actions">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search by name or position..." onkeyup="filterMembers()">
+                    <div class="btn-group">
+                        <button class="btn-green-add" onclick="openAddModal()">+ Add Member</button>
+                        <button class="btn-red-clear" onclick="clearAllMembers()">Clear All</button>
+                    </div>
+                </div>
+
+                <!-- CARDS SUMMARY -->
+                <div class="cards-grid">
+                    <div class="metric-card magenta"><div><div class="card-number" id="lblTotal">0</div><div class="card-label">Total</div></div></div>
+                    <div class="metric-card teal"><div><div class="card-number" id="lblActive">0</div><div class="card-label">Active</div></div></div>
+                    <div class="metric-card dark"><div><div class="card-number" id="lblInactive">0</div><div class="card-label">Inactive</div></div></div>
+                    <div class="metric-card orange"><div><div class="card-number" id="lblNew">0</div><div class="card-label">New</div></div></div>
+                </div>
+
+                <!-- MEMBERS TABLE WITH HORIZONTAL SCROLL -->
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Photo</th>
+                                <th>Name</th>
+                                <th>Gender / Age</th>
+                                <th>Position</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="memberTableBody">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- MY ACCOUNT PAGE -->
+            <div id="page-myaccount" class="page-view">
+                <div class="welcome-title">My Account</div>
+                <div class="subtitle">Manage Profile & Security Settings</div>
+
+                <!-- SECTION 1: PROFILE INFORMATION -->
+                <div class="account-profile-header">
+                    <div class="gmail-profile-mark" aria-label="Gmail account">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/7/7e/Gmail_icon_%282020%29.svg" alt="Gmail logo">
+                    </div>
+
+                    <div class="account-name" id="userNameLabel">emilpanay44@gmail.com</div>
+                    <div class="account-role">Administrator</div>
+                    <div class="connected-badge" id="gmailProfileBadge">✓ Signed in securely · emilpanay44@gmail.com</div>
+
+                    <div class="account-details-pills">
+                        <div class="pill-item"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.4 19.4 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7l.4 2.8a2 2 0 0 1-.6 1.7L7.6 9.5a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 1.7-.6l2.8.4a2 2 0 0 1 1.6 2.9z"/></svg> 0917-123-4567</div>
+                        <div class="pill-item highlight"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg> Worship Team</div>
+                        <div class="pill-item"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg> Member Since: Mar 15, 2022</div>
+                    </div>
+                </div>
+
+                <!-- SECTION 2: SECURITY & LINKED ACCOUNTS -->
+                <div class="section-card">
+                    <div class="section-card-title"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></svg> SECURITY & LINKED ACCOUNTS</div>
+                    
+                    <!-- Facebook Account -->
+                    <div class="account-row-item">
+                        <div class="account-label-flex">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg" class="account-logo" alt="Facebook Logo">
+                            <div>
+                                <strong>Facebook Account</strong><br>
+                                <span style="color:#888; font-size:12px;" id="fbConnectedText">Not connected yet</span>
+                            </div>
+                        </div>
+                        <a href="https://www.facebook.com/login" target="_blank" class="btn-small-outline" id="btnFBToggle"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10 13a5 5 0 0 0 7.1 0l3-3A5 5 0 0 0 13 2.9l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.1 0l-3 3A5 5 0 0 0 11 21.1l1.7-1.7"/></svg> Connect Facebook</a>
+                    </div>
+
+                    <div class="account-row-item">
+                        <div>
+                            <strong>Password Settings</strong><br>
+                            <span style="color:#666; font-size:12px;">Current Password: ••••••••</span>
+                        </div>
+                        <button class="btn-small-outline" onclick="promptChangePassword()"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.5 9A7 7 0 0 1 18 6l2 6M4 12l2 6a7 7 0 0 0 12.5-3"/></svg> Change Password</button>
+                    </div>
+
+                    <div class="account-row-item">
+                        <div>
+                            <strong>Two-Factor Authentication (2FA)</strong><br>
+                            <span style="color:#e67e22; font-size:12px; font-weight:bold;" id="txt2FAStatus">⚠️ Not Enabled</span>
+                        </div>
+                        <button class="btn-small-outline" onclick="toggle2FA()" id="btn2FAToggle"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> Enable 2FA</button>
+                    </div>
+                </div>
+
+                <!-- SECTION 3: ACCOUNT PROVISIONING -->
+                <div class="section-card">
+                    <div class="section-card-title">➕ CREATE / APPROVE CHURCH ACCOUNT</div>
+                    <p style="font-size:12px; color:#666; margin-bottom:12px;">Para ligtas, ang account ay ginagawa sa Supabase Authentication. Ang bagong sign-up ay PENDING muna; ang Pastor/Admin role ay itatalaga lamang ng project owner sa SQL Editor. Huwag maglagay ng Secret key sa app.</p>
+
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="newAccName" class="form-card-input" placeholder="e.g. Maria Clara">
+                    </div>
+                    <div class="form-group">
+                        <label>Email (Gmail)</label>
+                        <input type="email" id="newAccEmail" class="form-card-input" placeholder="e.g. mariaclara@gmail.com">
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <div class="form-group" style="flex:1;">
+                            <label>Requested Role (approval required)</label>
+                            <select id="newAccRole" class="form-card-input">
+                                <option value="staff">Staff</option>
+                                <option value="admin">Admin</option>
+                                <option value="pastor">Pastor</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label>Ministry</label>
+                            <select id="newAccMinistry" class="form-card-input">
+                                <option value="Worship Team">Worship Team</option>
+                                <option value="Usher / Greeters">Usher / Greeters</option>
+                                <option value="Youth Ministry">Youth Ministry</option>
+                                <option value="Sunday School">Sunday School</option>
+                                <option value="Outreach Team">Outreach Team</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="font-size:11px; color:#444; margin-bottom:10px;">
+                        <label><input type="checkbox" id="chkSendInvite" checked> I confirm this account is authorized by church leadership</label>
+                    </div>
+
+                    <button class="btn-primary-block" onclick="createNewUserAccount()">[ Account Setup Instructions ]</button>
+                </div>
+
+                <!-- SECTION 4: SIGN OUT -->
+                <div class="section-card" style="border:1px solid #fadbd8;">
+                    <div class="section-card-title" style="color:#dd4b39;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 21h16M6 21V3h12v18M14 12h.01"/></svg> SIGN OUT</div>
+                    <p style="font-size:12px; color:#666; margin-bottom:15px;">Mag-logout nang ligtas sa system para maprotektahan ang iyong account.</p>
+                    <button class="btn-logout" onclick="openSignoutModal()"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 21h16M6 21V3h12v18M14 12h.01"/></svg> Sign Out / Logout</button>
+                </div>
+            </div>
+
+            <!-- PRAYER WALL + PRIVATE PASTOR MESSAGES -->
+            <div id="page-prayer" class="page-view">
+              <div class="welcome-title">🙏 Prayer Wall & Prayer Requests</div>
+              <p class="subtitle">Magbahagi ng prayer request sa church o magpadala ng pribadong mensahe sa pastor.</p>
+              <div class="section-card" data-member-allowed="true">
+                <h3 style="margin-bottom:12px;color:#263640">I-post sa Prayer Wall</h3>
+                <p style="font-size:12px;color:#748091;margin-bottom:12px">Makikita ng mga naka-login na church account ang post na ito.</p>
+                <div class="form-group"><label>Prayer request</label><textarea id="publicPrayerText" class="form-card-input" rows="3" maxlength="2000" placeholder="Ibahagi ang prayer request na puwedeng makita ng church"></textarea></div>
+                <div class="form-group"><label>Pangalan na ipapakita</label><input id="publicPrayerName" class="form-card-input" maxlength="100" placeholder="Pangalan o Anonymous"></div>
+                <button class="btn-primary-block" onclick="submitPublicPrayer()">🙏 I-post sa Prayer Wall</button>
+              </div>
+              <div id="publicPrayerList" class="section-card"><div class="empty-state">Loading prayer wall…</div></div>
+              <div class="section-card" data-member-allowed="true">
+                <h3 style="margin-bottom:8px;color:#263640">✉️ Private Message to Pastor</h3>
+                <p style="font-size:12px;color:#748091;margin-bottom:12px">Ang mensaheng ito ay ikaw at ang pastor lamang ang makakakita.</p>
+                <div class="form-group"><label>Subject (optional)</label><input id="pastorMessageSubject" class="form-card-input" maxlength="150" placeholder="Hal. Personal prayer request"></div>
+                <div class="form-group"><label>Your message / prayer request</label><textarea id="pastorMessageText" class="form-card-input" rows="4" maxlength="4000" placeholder="Isulat ang mensahe para kay Pastor…"></textarea></div>
+                <button class="btn-primary-block" onclick="sendPastorMessage()">📨 Send Private Message</button>
+                <div id="myPastorMessages" style="margin-top:14px"></div>
+              </div>
+              <div id="pastorInboxCard" class="section-card" style="display:none">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+                  <h3 style="color:#263640">📬 Pastor Inbox <span id="pastorUnreadCount" class="badge-active">0 new</span></h3>
+                  <button class="btn-small-outline" onclick="loadPastorInbox()">Refresh</button>
+                </div>
+                <p style="font-size:12px;color:#748091;margin:8px 0 12px">Dito makikita ang private messages ng staff at members.</p>
+                <div id="pastorInboxList"><div class="empty-state">Loading messages…</div></div>
+              </div>
+            </div>
+            <div id="page-biblestudy" class="page-view"><div class="welcome-title"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 7v14"/><path d="M3 5.5A2.5 2.5 0 0 1 5.5 3H12v18H5.5A2.5 2.5 0 0 0 3 23z"/><path d="M21 5.5A2.5 2.5 0 0 0 18.5 3H12v18h6.5a2.5 2.5 0 0 1 2.5 2z"/></svg> Bible Study</div><p class="subtitle">Bible reading notes at study topics.</p><div class="section-card"><div class="form-group"><label>Study title / Bible passage</label><input id="studyTitle" class="form-card-input" placeholder="e.g. John 3:16"></div><div class="form-group"><label>Notes / Reflection</label><textarea id="studyNotes" class="form-card-input" rows="4" placeholder="Write your lesson or reflection"></textarea></div><button class="btn-primary-block" onclick="addRecord('studies',['studyTitle','studyNotes'])">➕ Save Study Note</button></div><div id="studiesList" class="section-card"></div></div>
+            <div id="page-groups" class="page-view"><div class="welcome-title"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg> Church Groups & Ministries</div><p class="subtitle">Manage ministry groups and member assignments.</p><div class="section-card"><div class="form-group"><label>Group / Ministry name</label><input id="groupName" class="form-card-input" placeholder="e.g. Worship Team"></div><div class="form-group"><label>Leader</label><input id="groupLeader" class="form-card-input" placeholder="Group leader"></div><div class="form-group"><label>Description</label><input id="groupDesc" class="form-card-input" placeholder="Group purpose"></div><button class="btn-primary-block" onclick="addRecord('groups',['groupName','groupLeader','groupDesc'])">➕ Add Group</button></div><div id="groupsList" class="section-card"></div></div>
+            <div id="page-calendar" class="page-view"><div class="welcome-title"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg> Church Calendar & Events</div><p class="subtitle">Create and manage church activities.</p><div class="section-card"><div class="form-group"><label>Event name</label><input id="eventName" class="form-card-input" placeholder="Sunday Service"></div><div class="form-group"><label>Date and time</label><input id="eventDate" type="datetime-local" class="form-card-input"></div><div class="form-group"><label>Venue</label><input id="eventVenue" class="form-card-input" placeholder="Main Hall"></div><button class="btn-primary-block" onclick="addRecord('events',['eventName','eventDate','eventVenue'])">➕ Create Event</button></div><div id="eventsList" class="section-card"></div></div>
+            <div id="page-todos" class="page-view"><div class="welcome-title"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m5 12 4 4L19 6"/></svg> To Do's</div><p class="subtitle">Track church tasks and mark completed work.</p><div class="section-card"><div class="form-group"><label>Task</label><input id="todoTask" class="form-card-input" placeholder="Prepare Sunday service"></div><div class="form-group"><label>Due date</label><input id="todoDue" type="date" class="form-card-input"></div><div class="form-group"><label>Assigned to</label><input id="todoOwner" class="form-card-input" placeholder="Person responsible"></div><button class="btn-primary-block" onclick="addRecord('todos',['todoTask','todoDue','todoOwner'])">➕ Add Task</button></div><div id="todosList" class="section-card"></div></div>
+            <div id="page-attendance" class="page-view"><div class="welcome-title"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5V3h6v1.5M8 10h8M8 14h8M8 18h5"/></svg> Attendance</div><p class="subtitle">Record member attendance and check-in/check-out times on this device.</p><div class="section-card"><div class="form-group"><label>Member name</label><input id="attName" class="form-card-input" placeholder="Member name"></div><div class="form-group"><label>Service / Event</label><input id="attEvent" class="form-card-input" placeholder="Sunday Service"></div><button class="btn-primary-block" onclick="addAttendance()">✅ Check In</button></div><div id="attendanceList" class="section-card"></div></div>
+            <div id="page-giving" class="page-view"><div class="welcome-title"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M16 8.5c-.7-.8-1.8-1.2-3.2-1.2-1.7 0-2.8.8-2.8 2s1 1.8 2.8 2.2 3.2 1 3.2 2.4-1.3 2.4-3.3 2.4c-1.5 0-2.8-.5-3.6-1.4M12 5v14"/></svg> Giving & Donations</div><p class="subtitle">Record donations for your local records. This does not process online payments.</p><div class="section-card"><div class="form-group"><label>Donor (optional)</label><input id="giveName" class="form-card-input" placeholder="Name / Anonymous"></div><div class="form-group"><label>Amount (PHP)</label><input id="giveAmount" type="number" min="0" step="0.01" class="form-card-input" placeholder="0.00"></div><div class="form-group"><label>Fund / Purpose</label><select id="givePurpose" class="form-card-input"><option>Tithes</option><option>Offering</option><option>Missions</option><option>Building Fund</option><option>Other</option></select></div><button class="btn-primary-block" onclick="addGiving()">➕ Record Giving</button></div><div id="givingList" class="section-card"></div></div>
+            <div id="page-forms" class="page-view"><div class="welcome-title"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/></svg> Forms & Registrations</div><p class="subtitle">Create a registration form entry and review submitted registrations.</p><div class="section-card"><div class="form-group"><label>Registrant name</label><input id="regName" class="form-card-input" placeholder="Full name"></div><div class="form-group"><label>Phone / Email</label><input id="regContact" class="form-card-input" placeholder="Contact details"></div><div class="form-group"><label>Program / Event</label><input id="regProgram" class="form-card-input" placeholder="Youth Camp"></div><button class="btn-primary-block" onclick="addRecord('registrations',['regName','regContact','regProgram'])">➕ Save Registration</button></div><div id="registrationsList" class="section-card"></div></div>
+            <div id="page-enews" class="page-view"><div class="welcome-title"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg> eNews / Church Messages</div><p class="subtitle">Prepare announcements and save message drafts. Sending email requires an email service integration.</p><div class="section-card"><div class="form-group"><label>Subject</label><input id="newsSubject" class="form-card-input" placeholder="Church announcement"></div><div class="form-group"><label>Message</label><textarea id="newsBody" class="form-card-input" rows="5" placeholder="Write your announcement..."></textarea></div><button class="btn-primary-block" onclick="addRecord('news',['newsSubject','newsBody'])"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 3h12l4 4v14H3V3z"/><path d="M7 3v6h10V3M7 21v-7h10v7"/></svg> Save Announcement</button></div><div id="newsList" class="section-card"></div></div>
+            <div id="page-resources" class="page-view"><div class="welcome-title"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> Resources</div><p class="subtitle">Save resource links and upload small files to this browser's local storage.</p><div class="section-card"><div class="form-group"><label>Resource title</label><input id="resourceTitle" class="form-card-input" placeholder="Worship song list"></div><div class="form-group"><label>Web link (optional)</label><input id="resourceUrl" type="url" class="form-card-input" placeholder="https://..."></div><div class="form-group"><label>Choose file (optional)</label><input id="resourceFile" type="file" class="form-card-input"></div><button class="btn-primary-block" onclick="addResource()">➕ Save Resource</button></div><div id="resourcesList" class="section-card"></div></div>
+            <div id="page-support" class="page-view"><div class="welcome-title"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.6 2.6 0 1 1 4.6 1.7c-1.2 1.1-2.1 1.5-2.1 3.3M12 17.5h.01"/></svg> Support Center</div><p class="subtitle">Help and basic usage guide for Together Church Skyline.</p><div class="section-card"><h3>How to use the system</h3><ul class="info-list"><li class="info-item"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg> Directory — add, edit, search, and delete member records.</li><li class="info-item"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 12 5 9a2 2 0 0 0-3 3l6 7a3 3 0 0 0 2 1h4a3 3 0 0 0 2-1l6-7a2 2 0 0 0-3-3l-3 3"/><path d="M9 12V5a2 2 0 0 1 4 0v7M13 8a2 2 0 0 1 4 0v4M9 8a2 2 0 0 0-4 0v3"/></svg> Prayer Wall — submit and update prayer requests.</li><li class="info-item"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg> Calendar — create church events and schedules.</li><li class="info-item"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m5 12 4 4L19 6"/></svg> To Do's — assign tasks and mark them complete.</li><li class="info-item"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5V3h6v1.5M8 10h8M8 14h8M8 18h5"/></svg> Attendance — check members in and out.</li><li class="info-item"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M16 8.5c-.7-.8-1.8-1.2-3.2-1.2-1.7 0-2.8.8-2.8 2s1 1.8 2.8 2.2 3.2 1 3.2 2.4-1.3 2.4-3.3 2.4c-1.5 0-2.8-.5-3.6-1.4M12 5v14"/></svg> Giving — record donations for local reporting.</li><li class="info-item"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> Resources — save links and small files.</li></ul><p style="margin-top:12px;font-size:13px">Important: this standalone HTML version saves data in this browser only. For shared accounts, real Gmail/Facebook login, email delivery, cloud backup, and multi-device access, connect a secure backend.</p><button class="btn-small-outline" onclick="alert('Together Church Skyline System\nStandalone local version. Use the menu to open each module.')">ℹ️ About this system</button></div></div>
+
+        </div>
+    </div>
+
+    <!-- ADD / EDIT MEMBER MODAL -->
+    <div id="modalOverlay">
+        <div class="modal-card">
+            <h3 id="modalTitle">Add New Member</h3>
+            <input type="hidden" id="editIndex" value="-1">
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="inputName" placeholder="e.g. Juan Dela Cruz">
+            </div>
+            <div class="form-group">
+                <label>Gender</label>
+                <select id="inputGender">
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Age</label>
+                <input type="number" id="inputAge" placeholder="e.g. 30">
+            </div>
+            <div class="form-group">
+                <label>Position</label>
+                <input type="text" id="inputPosition" placeholder="e.g. Pastor, Member">
+            </div>
+            <div class="form-group">
+                <label>Location / Address</label>
+                <input type="text" id="inputLocation" placeholder="e.g. Davao City">
+            </div>
+            <div class="form-group">
+                <label>Status</label>
+                <select id="inputStatus">
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Profile Picture (Album / Gallery)</label>
+                <input type="file" id="inputFile" accept="image/*">
+            </div>
+            <div class="modal-actions">
+                <button class="action-btn delete" onclick="closeModal()">Cancel</button>
+                <button class="btn-green-add" onclick="saveMember()">Save Member</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SIGN OUT CONFIRMATION MODAL -->
+    <div id="signoutModalOverlay">
+        <div class="modal-card" style="text-align:center;">
+            <h3 style="color:#dd4b39;"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 21h16M6 21V3h12v18M14 12h.01"/></svg> Sign Out</h3>
+            <p style="font-size:13px; color:#555; margin:15px 0;">Are you sure you want to sign out of Together Church Skyline System?</p>
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button class="btn-small-outline" style="padding:8px 20px;" onclick="closeSignoutModal()">Cancel</button>
+                <button class="btn-red-clear" style="padding:8px 20px; flex:none;" onclick="confirmSignOut()">Yes, Sign Out</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supabase JavaScript client (public publishable key only) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        let members = [
+            { name: "Juan Dela Cruz", gender: "Male", age: 35, position: "Pastor", location: "Davao City", status: "Active", photo: "https://i.pravatar.cc/100?img=12" },
+            { name: "Maria Santos", gender: "Female", age: 28, position: "Worship Leader", location: "Davao Sur", status: "Active", photo: "https://i.pravatar.cc/100?img=32" },
+            { name: "Jose Reyes", gender: "Male", age: 42, position: "Deacon", location: "Davao City", status: "Active", photo: "https://i.pravatar.cc/100?img=52" },
+            { name: "Anna Mendeza", gender: "Female", age: 24, position: "Youth Member", location: "GenSan", status: "Active", photo: "https://i.pravatar.cc/100?img=68" }
+        ];
+
+        let googleConnected = true;
+        let fbConnected = false;
+        let twoFAEnabled = false;
+        let currentAuthMode = 'signin';
+
+        window.onload = function() {
+            renderMembers();
+        };
+
+        /* AUTH GATE CONTROLE LOGIC */
+        function showAuthForm(mode) {
+            currentAuthMode = mode;
+            document.getElementById('authStep1').style.display = 'none';
+            document.getElementById('authStep2').style.display = 'block';
+
+            if (mode === 'create') {
+                document.getElementById('authFormTitle').innerText = "Create Account";
+                document.getElementById('authFormSub').innerText = "Create a church login with your email address";
+                document.getElementById('groupFullName').style.display = 'block';
+                document.getElementById('authFullName').required = true;
+                document.getElementById('authSubmitBtn').innerText = "Create Account";
+                document.getElementById('authSubmitBtn').style.backgroundColor = "#e67e22";
+                document.getElementById('authToggleFooter').innerText = "Already have an account? Sign In";
+            } else {
+                document.getElementById('authFormTitle').innerText = "Sign In";
+                document.getElementById('authFormSub').innerText = "Secure sign in for authorized church accounts";
+                document.getElementById('groupFullName').style.display = 'none';
+                document.getElementById('authFullName').required = false;
+                document.getElementById('authSubmitBtn').innerText = "Sign In";
+                document.getElementById('authSubmitBtn').style.backgroundColor = "#00a65a";
+                document.getElementById('authToggleFooter').innerText = "Need an account? Create one here";
+            }
+        }
+
+        function backToAuthChoice() {
+            document.getElementById('authStep2').style.display = 'none';
+            document.getElementById('authStep1').style.display = 'block';
+        }
+
+        function toggleAuthMode() {
+            if (currentAuthMode === 'signin') {
+                showAuthForm('create');
+            } else {
+                showAuthForm('signin');
+            }
+        }
+
+        function loginWithSocial(provider) {
+            if (provider === 'Google') {
+                alert("Redirecting to Google / Gmail authentication...");
+            } else if (provider === 'Facebook') {
+                alert("Redirecting to Facebook authentication...");
+            }
+            // Grant system access
+            document.getElementById('authOverlay').style.display = 'none';
+            switchPage('dashboard', document.querySelectorAll('.sidebar-item')[0]);
+        }
+
+        function handleAuthSubmit(event) {
+            event.preventDefault();
+            const contact = document.getElementById('authContact').value.trim();
+            const password = document.getElementById('authPassword').value.trim();
+            const name = document.getElementById('authFullName').value.trim();
+
+            if (!contact || !password) {
+                alert("Please fill in all required fields.");
+                return;
+            }
+
+            if (currentAuthMode === 'create' && name) {
+                document.getElementById('userNameLabel').innerText = name;
+                alert(`Local demo profile created for ${name}!`);
+            } else {
+                alert("Local demo session opened.");
+            }
+
+            document.getElementById('authOverlay').style.display = 'none';
+            switchPage('dashboard', document.querySelectorAll('.sidebar-item')[0]);
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        function switchPage(pageId, element) {
+            const pages = document.querySelectorAll('.page-view');
+            pages.forEach(page => page.classList.remove('active'));
+
+            const targetPage = document.getElementById('page-' + pageId);
+            if (targetPage) {
+                targetPage.classList.add('active');
+            }
+
+            if (element) {
+                const items = document.querySelectorAll('.sidebar-item');
+                items.forEach(item => item.classList.remove('active'));
+                element.classList.add('active');
+            }
+
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('open');
+            }
+        }
+
+        function renderMembers(filterText = "") {
+            const tbody = document.getElementById('memberTableBody');
+            tbody.innerHTML = "";
+
+            let activeCount = 0;
+            let inactiveCount = 0;
+
+            members.forEach((m, index) => {
+                if (m.status === "Active") activeCount++;
+                else inactiveCount++;
+
+                if (filterText && !m.name.toLowerCase().includes(filterText.toLowerCase()) && !m.position.toLowerCase().includes(filterText.toLowerCase())) {
+                    return;
+                }
+
+                const badgeClass = m.status === "Active" ? "badge-active" : "badge-inactive";
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><img src="${m.photo || 'https://i.pravatar.cc/100'}" class="user-avatar" alt="Avatar"></td>
+                    <td><strong>${m.name}</strong></td>
+                    <td>${m.gender} / ${m.age || 'N/A'}</td>
+                    <td><strong>${m.position}</strong></td>
+                    <td>${m.location}</td>
+                    <td><span class="${badgeClass}">${m.status}</span></td>
+                    <td>${window.tcsCurrentRole === 'pastor' ? `<button class="action-btn" onclick="openEditModal(${index})">Edit</button> <button class="action-btn delete" onclick="deleteMember(${index})">Delete</button>` : '<span style="color:#89948e;font-size:11px">View only</span>'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            document.getElementById('lblTotal').innerText = members.length;
+            document.getElementById('lblActive').innerText = activeCount;
+            document.getElementById('lblInactive').innerText = inactiveCount;
+            document.getElementById('lblNew').innerText = Math.min(members.length, 4);
+        }
+
+        function filterMembers() {
+            const query = document.getElementById('searchInput').value;
+            renderMembers(query);
+        }
+
+        function openAddModal() {
+            document.getElementById('modalTitle').innerText = "Add New Member";
+            document.getElementById('editIndex').value = -1;
+            document.getElementById('inputName').value = "";
+            document.getElementById('inputGender').value = "Male";
+            document.getElementById('inputAge').value = "";
+            document.getElementById('inputPosition').value = "";
+            document.getElementById('inputLocation').value = "";
+            document.getElementById('inputStatus').value = "Active";
+            document.getElementById('inputFile').value = "";
+            document.getElementById('modalOverlay').style.display = "flex";
+        }
+
+        function openEditModal(index) {
+            const m = members[index];
+            document.getElementById('modalTitle').innerText = "Edit Member";
+            document.getElementById('editIndex').value = index;
+            document.getElementById('inputName').value = m.name;
+            document.getElementById('inputGender').value = m.gender;
+            document.getElementById('inputAge').value = m.age;
+            document.getElementById('inputPosition').value = m.position;
+            document.getElementById('inputLocation').value = m.location;
+            document.getElementById('inputStatus').value = m.status;
+            document.getElementById('inputFile').value = "";
+            document.getElementById('modalOverlay').style.display = "flex";
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').style.display = "none";
+        }
+
+        function saveMember() {
+            const name = document.getElementById('inputName').value.trim();
+            const gender = document.getElementById('inputGender').value;
+            const age = document.getElementById('inputAge').value;
+            const position = document.getElementById('inputPosition').value.trim() || "Member";
+            const location = document.getElementById('inputLocation').value.trim() || "N/A";
+            const status = document.getElementById('inputStatus').value;
+            const fileInput = document.getElementById('inputFile');
+            const index = parseInt(document.getElementById('editIndex').value);
+
+            if (!name) {
+                alert("Mangyaring ilagay ang pangalan ng miyembro.");
+                return;
+            }
+
+            let defaultPhoto = index !== -1 ? members[index].photo : "https://i.pravatar.cc/100?img=" + Math.floor(Math.random() * 70);
+
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    processSave(index, { name, gender, age, position, location, status, photo: e.target.result });
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                processSave(index, { name, gender, age, position, location, status, photo: defaultPhoto });
+            }
+        }
+
+        function processSave(index, memberData) {
+            if (index === -1) {
+                members.push(memberData);
+            } else {
+                members[index] = memberData;
+            }
+            closeModal();
+            renderMembers();
+        }
+
+        function deleteMember(index) {
+            if (confirm("Sigurado ka bang gusto mong tanggalin ang miyembrong ito?")) {
+                members.splice(index, 1);
+                renderMembers();
+            }
+        }
+
+        function clearAllMembers() {
+            if (confirm("Babala: Gusto mo bang i-clear at i-delete ang LAHAT ng miyembro sa direktoryo?")) {
+                members = [];
+                renderMembers();
+            }
+        }
+
+        /* MY ACCOUNT FUNCTIONS */
+        function uploadUserPhoto(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('userProfileImg').src = e.target.result;
+                    alert("Profile photo successfully updated!");
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function promptChangePassword() {
+            const pass = prompt("Enter your new password:");
+            if (pass && pass.trim().length >= 6) {
+                alert("Password updated successfully!");
+            } else if (pass) {
+                alert("Password must be at least 6 characters long.");
+            }
+        }
+
+        function toggle2FA() {
+            twoFAEnabled = !twoFAEnabled;
+            const btn = document.getElementById('btn2FAToggle');
+            const txt = document.getElementById('txt2FAStatus');
+            if (twoFAEnabled) {
+                btn.innerText = "🔓 Disable 2FA";
+                btn.className = "btn-small-outline disconnect";
+                txt.innerText = "✅ 2FA Active & Secured";
+                txt.style.color = "#00a65a";
+            } else {
+                btn.innerText = "\u{1F512} Enable 2FA";
+                btn.className = "btn-small-outline";
+                txt.innerText = "⚠️ Not Enabled";
+                txt.style.color = "#e67e22";
+            }
+        }
+
+        function createNewUserAccount() {
+            const name = document.getElementById('newAccName').value.trim();
+            const email = document.getElementById('newAccEmail').value.trim();
+            const role = document.getElementById('newAccRole').value;
+            const ministry = document.getElementById('newAccMinistry').value;
+            const sendInvite = document.getElementById('chkSendInvite').checked;
+
+            if (!name || !email) {
+                alert("Mangyaring punan ang Full Name at Email.");
+                return;
+            }
+
+            members.push({
+                name: name,
+                gender: "Male",
+                age: 25,
+                position: role + " (" + ministry + ")",
+                location: "Davao City",
+                status: "Active",
+                photo: "https://i.pravatar.cc/100?img=" + Math.floor(Math.random() * 70)
+            });
+
+            renderMembers();
+
+            let msg = `Account successfully created for ${name} (${role})!`;
+            if (sendInvite) {
+                msg += ` An invitation email with login instructions was sent to ${email}.`;
+            }
+            alert(msg);
+
+            document.getElementById('newAccName').value = "";
+            document.getElementById('newAccEmail').value = "";
+        }
+
+        function openSignoutModal() {
+            document.getElementById('signoutModalOverlay').style.display = "flex";
+        }
+
+        function closeSignoutModal() {
+            document.getElementById('signoutModalOverlay').style.display = "none";
+        }
+
+        function confirmSignOut() {
+            closeSignoutModal();
+            document.getElementById('authOverlay').style.display = 'flex';
+            backToAuthChoice();
+            alert("You have been signed out successfully.");
+        }
+
+        /* WORKING LOCAL MODULES — data is saved in this browser/device */
+        const STORE_KEY = 'togetherChurchSkyline_v2';
+        const moduleDefaults = { prayers:[], studies:[], groups:[], events:[], todos:[], attendance:[], giving:[], registrations:[], news:[], resources:[] };
+        let moduleData = loadModuleData();
+        function loadModuleData(){
+            try { return Object.assign({}, moduleDefaults, JSON.parse(localStorage.getItem(STORE_KEY) || '{}')); }
+            catch(e){ return JSON.parse(JSON.stringify(moduleDefaults)); }
+        }
+        function saveModuleData(){ try { localStorage.setItem(STORE_KEY, JSON.stringify(moduleData)); } catch(e){ alert('Hindi na-save: maaaring puno na ang browser storage. Subukan ang mas maliit na file.'); } }
+        function esc(v){ return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+        const moduleViews = {
+          prayers:{title:'Prayer Requests',fields:['prayerText','prayerName'],labels:['Request','Name']},
+          studies:{title:'Bible Study Notes',fields:['studyTitle','studyNotes'],labels:['Title / Passage','Notes']},
+          groups:{title:'Groups',fields:['groupName','groupLeader','groupDesc'],labels:['Group','Leader','Description']},
+          events:{title:'Events',fields:['eventName','eventDate','eventVenue'],labels:['Event','Date','Venue']},
+          todos:{title:'Tasks',fields:['todoTask','todoDue','todoOwner'],labels:['Task','Due','Assigned to']},
+          registrations:{title:'Registrations',fields:['regName','regContact','regProgram'],labels:['Name','Contact','Program']},
+          news:{title:'Saved Announcements',fields:['newsSubject','newsBody'],labels:['Subject','Message']},
+          resources:{title:'Resources',fields:['resourceTitle','resourceUrl'],labels:['Title','Link / File']}
+        };
+        function addRecord(type, ids){
+          const values=ids.map(id=>document.getElementById(id).value.trim());
+          if(!values[0]){alert('Pakilagyan ang required na unang field.');return;}
+          const item={id:Date.now()+Math.random(),values,created:new Date().toLocaleString()};
+          moduleData[type].unshift(item); saveModuleData(); ids.forEach(id=>document.getElementById(id).value=''); renderModule(type);
+        }
+        function renderModule(type){
+          const target=document.getElementById(type+'List'); if(!target)return;
+          const meta=moduleViews[type]; const rows=moduleData[type]||[];
+          target.innerHTML='<h3 style="margin-bottom:10px">'+meta.title+' ('+rows.length+')</h3>'+
+            (rows.length?rows.map((r,i)=>'<div class="record-row"><div class="record-main"><strong>'+esc(r.values[0])+'</strong>'+
+            r.values.slice(1).map((v,j)=>'<div style="color:#666;margin-top:4px"><b>'+esc(meta.labels[j+1]||'Details')+':</b> '+esc(v)+'</div>').join('')+
+            '<div style="color:#999;font-size:10px;margin-top:5px">'+esc(r.created||'')+'</div></div><div class="record-actions">'+
+            (type==='prayers'?'<button onclick="togglePrayer('+i+')">'+(r.answered?'Answered':'Mark Answered')+'</button>':'')+
+            (type==='todos'?'<button onclick="toggleTodo('+i+')">'+(r.done?'Reopen':'Complete')+'</button>':'')+
+            '<button class="danger" onclick="deleteRecord('+JSON.stringify(type)+','+i+')">Delete</button></div></div>').join(''):'<div class="empty-state">Wala pang records. Magdagdag gamit ang form sa itaas.</div>');
+        }
+        function deleteRecord(type,index){ if(confirm('Delete ang record na ito?')){moduleData[type].splice(index,1);saveModuleData();renderModule(type);} }
+        function togglePrayer(i){moduleData.prayers[i].answered=!moduleData.prayers[i].answered;saveModuleData();renderModule('prayers');}
+        function toggleTodo(i){moduleData.todos[i].done=!moduleData.todos[i].done;saveModuleData();renderModule('todos');}
+        function addAttendance(){
+          const name=document.getElementById('attName').value.trim(), event=document.getElementById('attEvent').value.trim()||'Church Service';
+          if(!name){alert('Ilagay ang pangalan.');return;}
+          moduleData.attendance.unshift({name,event,checkin:new Date().toLocaleString(),checkout:'',id:Date.now()});
+          saveModuleData();document.getElementById('attName').value='';renderAttendance();
+        }
+        function renderAttendance(){
+          const el=document.getElementById('attendanceList');if(!el)return;const a=moduleData.attendance;
+          el.innerHTML='<h3>Attendance Records ('+a.length+')</h3>'+(a.length?a.map((r,i)=>'<div class="record-row"><div class="record-main"><b>'+esc(r.name)+'</b><div>'+esc(r.event)+'</div><small>In: '+esc(r.checkin)+' | Out: '+esc(r.checkout||'Not yet checked out')+'</small></div><div class="record-actions">'+(!r.checkout?'<button onclick="checkOutAttendance('+i+')">Check Out</button>':'')+'<button class="danger" onclick="deleteAttendance('+i+')">Delete</button></div></div>').join(''):'<p class="empty-state">Wala pang attendance.</p>');
+        }
+        function checkOutAttendance(i){moduleData.attendance[i].checkout=new Date().toLocaleString();saveModuleData();renderAttendance();}
+        function deleteAttendance(i){if(confirm('Delete attendance record?')){moduleData.attendance.splice(i,1);saveModuleData();renderAttendance();}}
+        function addGiving(){
+          const name=document.getElementById('giveName').value.trim()||'Anonymous', amount=Number(document.getElementById('giveAmount').value), purpose=document.getElementById('givePurpose').value;
+          if(!(amount>0)){alert('Maglagay ng valid na amount.');return;}
+          moduleData.giving.unshift({name,amount,purpose,date:new Date().toLocaleString()});saveModuleData();
+          document.getElementById('giveName').value='';document.getElementById('giveAmount').value='';renderGiving();
+        }
+        function renderGiving(){
+          const el=document.getElementById('givingList');if(!el)return;const a=moduleData.giving,total=a.reduce((n,r)=>n+r.amount,0);
+          el.innerHTML='<h3>Giving Records</h3><p style="font-size:20px;font-weight:bold;color:#b50d7b;margin:8px 0">Total: ₱'+total.toLocaleString('en-PH',{minimumFractionDigits:2})+'</p>'+
+          (a.length?a.map((r,i)=>'<div class="record-row"><div class="record-main"><b>₱'+r.amount.toLocaleString('en-PH',{minimumFractionDigits:2})+' — '+esc(r.purpose)+'</b><div>'+esc(r.name)+' · '+esc(r.date)+'</div></div><div class="record-actions"><button class="danger" onclick="deleteGiving('+i+')">Delete</button></div></div>').join(''):'<p class="empty-state">Wala pang giving records.</p>');
+        }
+        function deleteGiving(i){if(confirm('Delete giving record?')){moduleData.giving.splice(i,1);saveModuleData();renderGiving();}}
+        function addResource(){
+          const title=document.getElementById('resourceTitle').value.trim(),url=document.getElementById('resourceUrl').value.trim(),file=document.getElementById('resourceFile').files[0];
+          if(!title){alert('Ilagay ang resource title.');return;}
+          const save=(fileData='')=>{moduleData.resources.unshift({id:Date.now(),values:[title,url||file?.name||'No link',fileData],created:new Date().toLocaleString()});saveModuleData();document.getElementById('resourceTitle').value='';document.getElementById('resourceUrl').value='';document.getElementById('resourceFile').value='';renderModule('resources');};
+          if(file){if(file.size>1500000){alert('Limit muna ang file upload sa 1.5 MB para hindi mapuno ang browser storage.');return;}const reader=new FileReader();reader.onload=e=>save(e.target.result);reader.readAsDataURL(file);}else save();
+        }
+        function renderAllModules(){Object.keys(moduleViews).forEach(renderModule);renderAttendance();renderGiving();}
+        const originalSwitchPage = switchPage;
+        switchPage = function(pageId, element){originalSwitchPage(pageId,element);if(pageId==='attendance')renderAttendance();else if(pageId==='giving')renderGiving();else if(moduleViews[pageId])renderModule(pageId);};
+        const originalRenderMembers = renderMembers;
+        renderMembers = function(filterText=""){originalRenderMembers(filterText);try{localStorage.setItem('togetherChurchMembers',JSON.stringify(members));}catch(e){}};
+        try{const savedMembers=JSON.parse(localStorage.getItem('togetherChurchMembers')||'null');if(Array.isArray(savedMembers))members=savedMembers;}catch(e){}
+        const originalProcessSave=processSave;
+        processSave=function(index,data){originalProcessSave(index,data);try{localStorage.setItem('togetherChurchMembers',JSON.stringify(members));}catch(e){}};
+        const originalDeleteMember=deleteMember;
+        deleteMember=function(i){originalDeleteMember(i);try{localStorage.setItem('togetherChurchMembers',JSON.stringify(members));}catch(e){}};
+        const originalClearAll=clearAllMembers;
+        clearAllMembers=function(){originalClearAll();try{localStorage.setItem('togetherChurchMembers',JSON.stringify(members));}catch(e){}};
+        // Social buttons must not pretend to authenticate without a configured OAuth backend.
+        loginWithSocial=function(provider){alert(provider+' sign-in needs a secure OAuth/backend setup. This offline HTML demo will not pretend that you are authenticated. Use Sign In with the local demo account instead.');};
+        // Keep profile and security actions honest in standalone mode.
+        promptChangePassword=function(){alert('Password changes require a secure server account. This standalone file cannot safely change a real password.');};
+        createNewUserAccount=function(){
+          const name=document.getElementById('newAccName').value.trim();
+          const email=document.getElementById('newAccEmail').value.trim();
+          const role=document.getElementById('newAccRole').value;
+          const ministry=document.getElementById('newAccMinistry').value;
+          const sendInvite=document.getElementById('chkSendInvite').checked;
+          if(!name || !email){alert('Ilagay ang pangalan at valid na email.');return;}
+          if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)){alert('Hindi valid ang email address.');return;}
+          members.push({name,gender:'Not specified',age:'',position:role+' ('+ministry+')',location:'',status:'Active',photo:'https://i.pravatar.cc/100?img='+Math.floor(Math.random()*70),email});
+          renderMembers();
+          document.getElementById('newAccName').value='';
+          document.getElementById('newAccEmail').value='';
+          alert('Naidagdag si '+name+' sa local Member Directory.'+(sendInvite?'\\nHindi naipapadala ang Gmail invite sa offline HTML; kailangan ito ng email/backend setup.':''));
+        };
+
+        /* Seed useful demo content once so every module is populated on first open. */
+        function seedDemoContent(){
+          const hasSeed=localStorage.getItem('togetherChurchSkyline_seeded_v3');
+          if(hasSeed) return;
+          const now=new Date();
+          const future=new Date(now.getTime()+3*24*60*60*1000);
+          const dateTime=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'T09:00';
+          moduleData.prayers.push(
+            {values:['Please pray for healing and strength for our church family.','Church Family'],created:'Sample request'},
+            {values:['Guidance and provision for our youth outreach.','Youth Ministry'],created:'Sample request',answered:true}
+          );
+          moduleData.studies.push({values:['John 3:16 — God’s Love','God’s love is freely given. Discuss how we can share this love through service and kindness.'],created:'Sample Bible study'});
+          moduleData.groups.push(
+            {values:['Worship Team','Maria Santos','Leads praise and worship during church services.'],created:'Sample ministry'},
+            {values:['Youth Ministry','Jose Reyes','Plans fellowship, discipleship, and youth outreach.'],created:'Sample ministry'},
+            {values:['Usher / Greeters','Anna Mendeza','Welcomes and assists attendees during services.'],created:'Sample ministry'}
+          );
+          moduleData.events.push({values:['Sunday Worship Service',dateTime(future),'Main Church Hall'],created:'Sample event'});
+          moduleData.todos.push(
+            {values:['Prepare worship songs','', 'Worship Team'],created:'Sample task',done:false},
+            {values:['Arrange chairs and sound system','', 'Usher Team'],created:'Sample task',done:true}
+          );
+          moduleData.attendance.push({name:'Maria Santos',event:'Sunday Worship Service',checkin:'Sample check-in',checkout:'',id:Date.now()+1});
+          moduleData.giving.push({name:'Anonymous',amount:500,purpose:'Offering',date:'Sample entry'});
+          moduleData.registrations.push({values:['Juan Dela Cruz','0917 000 0000','Youth Fellowship'],created:'Sample registration'});
+          moduleData.news.push({values:['Welcome to Together Church Skyline','Welcome! Check the church calendar for upcoming activities, join a ministry group, and share prayer requests here.'],created:'Sample announcement'});
+          moduleData.resources.push({values:['Church Service Guide','https://www.bible.com/',''],created:'Sample resource'});
+          saveModuleData();
+          localStorage.setItem('togetherChurchSkyline_seeded_v3','yes');
+        }
+
+        function refreshDashboard(){
+          const cards=document.querySelectorAll('#page-dashboard .metric-card');
+          const values=[
+            moduleData.groups.length,
+            moduleData.attendance.length,
+            moduleData.prayers.filter(x=>!x.answered).length,
+            moduleData.todos.filter(x=>!x.done).length
+          ];
+          cards.forEach((card,i)=>{
+            const number=card.querySelector('.card-number');
+            if(number) number.textContent=values[i] ?? 0;
+          });
+          const lists=document.querySelectorAll('#page-dashboard .dash-grid-2 .info-list');
+          if(lists[0]){
+            lists[0].innerHTML=moduleData.news.slice(0,3).map(x=>'<li class="info-item"><b>'+esc(x.values[0])+'</b><br>'+esc(x.values[1])+'</li>').join('') || '<li class="info-item">Wala pang announcement.</li>';
+          }
+          if(lists[1]){
+            const upcoming=moduleData.events.slice(0,3);
+            lists[1].innerHTML=upcoming.map(x=>'<li class="info-item"><b>'+esc(x.values[0])+'</b><br>'+esc(x.values[1])+' · '+esc(x.values[2])+'</li>').join('') || '<li class="info-item">Wala pang naka-schedule na event.</li>';
+          }
+        }
+        const priorSaveModuleData=saveModuleData;
+        saveModuleData=function(){priorSaveModuleData();refreshDashboard();};
+        seedDemoContent();
+        refreshDashboard();
+
+        document.addEventListener('DOMContentLoaded',renderAllModules);
+        renderAllModules();
+
+    </script>
+
+
+    <!-- REAL SUPABASE AUTHENTICATION FOR TOGETHER CHURCH SKYLINE -->
+    <script>
+    (function () {
+      const SUPABASE_URL = 'https://bagakrlffvsvsthnfvet.supabase.co';
+      const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_2sfR3GxKHeqV9l7DWwFtQw_x4qMBPf6';
+      let authBusy = false;
+      let activeProfile = null;
+
+      if (!window.supabase || !window.supabase.createClient) {
+        console.error('Supabase JS library did not load.');
+        return;
+      }
+      const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+      });
+      window.tcsSupabase = client;
+
+      function roleLabel(role) {
+        return ({ pastor: 'Pastor', admin: 'Administrator', staff: 'Staff', member: 'Church Member' })[role] || 'Pending approval';
+      }
+      function showSignedInUser(user, profile) {
+        activeProfile = profile;
+        window.tcsCurrentUser = user;
+        window.tcsCurrentRole = profile && profile.role ? profile.role : null;
+        const name = user.email || 'Church User';
+        const nameEl = document.getElementById('userNameLabel');
+        if (nameEl) nameEl.textContent = name;
+        const roleEl = document.querySelector('#page-myaccount .account-role');
+        if (roleEl) roleEl.textContent = roleLabel(profile.role);
+        const gmailEl = document.getElementById('gmailConnectedText');
+        if (gmailEl) gmailEl.textContent = user.email || '';
+        const badge = document.getElementById('gmailProfileBadge');
+        if (badge) badge.textContent = '✓ Signed in securely · ' + (user.email || '');
+        const overlay = document.getElementById('authOverlay');
+        if (overlay) overlay.style.display = 'none';
+        if (typeof switchPage === 'function') switchPage('dashboard', document.querySelector('.sidebar-item'));
+        if (typeof window.applyPastorPermissions === 'function') window.applyPastorPermissions();
+        if (typeof window.tcsSetupPrayerMessaging === 'function') window.tcsSetupPrayerMessaging();
+      }
+      async function fetchProfile(user) {
+        // The signup trigger creates the profile; briefly retry in case it has not committed yet.
+        for (let i = 0; i < 5; i++) {
+          const { data, error } = await client.from('profiles').select('id,full_name,role').eq('id', user.id).maybeSingle();
+          if (!error && data) return data;
+          await new Promise(resolve => setTimeout(resolve, 350));
+        }
+        throw new Error('Hindi makita ang profile record. Pakisuri kung na-run ang database SQL at signup trigger.');
+      }
+      async function enterWithUser(user) {
+        if (!user || authBusy) return;
+        authBusy = true;
+        try {
+          const profile = await fetchProfile(user);
+          if (!['pastor'].includes(profile.role)) {
+            await client.auth.signOut();
+            alert('Ang file na ito ay para lamang sa Pastor Admin account (role: pastor). Gamitin ang Member file para sa member account.');
+            const overlay = document.getElementById('authOverlay');
+            if (overlay) overlay.style.display = 'flex';
+            return;
+          }
+          showSignedInUser(user, profile);
+        } catch (err) {
+          console.error(err);
+          await client.auth.signOut();
+          alert('Hindi pa ma-verify ang church account: ' + (err.message || 'Unknown error'));
+          const overlay = document.getElementById('authOverlay');
+          if (overlay) overlay.style.display = 'flex';
+        } finally { authBusy = false; }
+      }
+
+      // Replace the old demo login: only Supabase-authenticated users with an approved role enter.
+      window.handleAuthSubmit = async function (event) {
+        event.preventDefault();
+        const email = document.getElementById('authContact').value.trim().toLowerCase();
+        const password = document.getElementById('authPassword').value;
+        const fullName = document.getElementById('authFullName').value.trim();
+        if (!email || !password) { alert('Ilagay ang email at password.'); return; }
+        if (!/^\S+@\S+\.\S+$/.test(email)) { alert('Maglagay ng valid na email address.'); return; }
+        const submit = document.getElementById('authSubmitBtn');
+        submit.disabled = true; submit.textContent = currentAuthMode === 'create' ? 'Creating account…' : 'Signing in…';
+        try {
+          if (currentAuthMode === 'create') {
+            if (!fullName) { alert('Ilagay ang buong pangalan.'); return; }
+            if (password.length < 8) { alert('Gumamit ng password na hindi bababa sa 8 characters.'); return; }
+            const { data, error } = await client.auth.signUp({
+              email, password,
+              options: { data: { full_name: fullName } }
+            });
+            if (error) throw error;
+            if (data.session && data.user) {
+              await enterWithUser(data.user);
+            } else {
+              alert('Naipadala ang registration request. Tingnan ang email para sa verification link. Pagkatapos ma-verify, kailangang aprubahan muna ng project owner ang Pastor/Staff role bago makapasok.');
+              showAuthForm('signin');
+            }
+          } else {
+            const { data, error } = await client.auth.signInWithPassword({ email, password });
+            if (error) throw error;
+            await enterWithUser(data.user);
+          }
+        } catch (err) {
+          console.error(err);
+          alert('Hindi natuloy ang account action: ' + (err.message || 'Pakisuri ang email at password.'));
+        } finally {
+          submit.disabled = false;
+          submit.textContent = currentAuthMode === 'create' ? 'Create Account' : 'Sign In';
+        }
+      };
+
+      // Social providers are intentionally not allowed to bypass authentication/role checks.
+      window.loginWithSocial = function (provider) {
+        alert(provider + ' login ay hindi pa naka-configure sa Supabase. Gamitin muna ang Email Address at Password.');
+      };
+
+      window.confirmSignOut = async function () {
+        closeSignoutModal();
+        const { error } = await client.auth.signOut();
+        if (error) { alert('Hindi nakapag-sign out: ' + error.message); return; }
+        activeProfile = null;
+        window.tcsCurrentUser = null;
+        window.tcsCurrentRole = null;
+        if (typeof window.applyPastorPermissions === 'function') window.applyPastorPermissions();
+        document.getElementById('authOverlay').style.display = 'flex';
+        backToAuthChoice();
+        alert('Naka-sign out ka na.');
+      };
+
+      window.promptChangePassword = async function () {
+        const pass = prompt('Ilagay ang bagong password (minimum 8 characters):');
+        if (!pass) return;
+        if (pass.length < 8) { alert('Ang password ay dapat hindi bababa sa 8 characters.'); return; }
+        const { error } = await client.auth.updateUser({ password: pass });
+        if (error) alert('Hindi na-update ang password: ' + error.message);
+        else alert('Matagumpay na na-update ang password.');
+      };
+
+      // Creating other users requires the server-side Admin API; never put the service-role key in HTML.
+      window.createNewUserAccount = function () {
+        const email = document.getElementById('newAccEmail').value.trim().toLowerCase();
+        const name = document.getElementById('newAccName').value.trim();
+        const role = document.getElementById('newAccRole').value;
+        if (!name || !email) { alert('Ilagay ang pangalan at email.'); return; }
+        const sql = "update public.profiles p set full_name = " + "'" + name.replace(/'/g, "''") + "', role = '" + role + "' from auth.users u where p.id = u.id and lower(u.email) = lower('" + email.replace(/'/g, "''") + "');";
+        alert('Hindi ligtas gumawa ng ibang Auth user mula sa browser gamit ang Publishable key lang. Una, gawin ang user sa Supabase Dashboard → Authentication → Users → Add user. Pagkatapos, ang project owner lang ang magpapatakbo ng SQL na ito sa SQL Editor:\n\n' + sql + '\n\nHuwag kailanman ilagay ang Secret/service_role key sa HTML.');
+      };
+
+      // Restore an existing session on refresh and enforce role approval.
+      client.auth.onAuthStateChange((event, session) => {
+        if (session && ['SIGNED_IN', 'INITIAL_SESSION', 'TOKEN_REFRESHED'].includes(event)) {
+          setTimeout(() => enterWithUser(session.user), 0);
+        }
+        if (event === 'SIGNED_OUT') {
+          const overlay = document.getElementById('authOverlay');
+          if (overlay) overlay.style.display = 'flex';
+        }
+      });
+      client.auth.getSession().then(({ data }) => {
+        if (data.session) enterWithUser(data.session.user);
+      });
+    })();
+    </script>
+
+
+    <!-- PRAYER WALL + PRIVATE PASTOR INBOX (requires the SQL setup file) -->
+    <script>
+    (function(){
+      const escHtml = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      const client = window.tcsSupabase;
+      let prayerChannel = null;
+      let inboxChannel = null;
+      let seenMessageIds = new Set();
+      const currentUser = () => window.tcsCurrentUser || null;
+      const isPastor = () => window.tcsCurrentRole === 'pastor';
+      function notifyPastor(msg){
+        const toast=document.createElement('div');
+        toast.style.cssText='position:fixed;right:16px;top:18px;z-index:12000;max-width:340px;background:#203b4c;color:white;padding:14px 16px;border-radius:10px;box-shadow:0 8px 30px #0003;font-size:13px;';
+        toast.innerHTML='<strong>📩 New message for Pastor</strong><div style="margin-top:5px">'+escHtml(msg)+'</div>';
+        document.body.appendChild(toast); setTimeout(()=>toast.remove(),6500);
+      }
+      function requireSignedIn(){ if(!client || !currentUser()){ alert('Mag-sign in muna para magamit ang Prayer Wall.'); return false; } return true; }
+      window.loadPublicPrayerWall = async function(){
+        const target=document.getElementById('publicPrayerList'); if(!target || !requireSignedIn()) return;
+        const {data,error}=await client.from('prayer_wall_posts').select('id,author_id,author_name,request,created_at,answered').order('created_at',{ascending:false}).limit(100);
+        if(error){ target.innerHTML='<div class="empty-state">Hindi ma-load ang Prayer Wall. Pakisigurong na-run ang SQL setup. '+escHtml(error.message)+'</div>'; return; }
+        target.innerHTML='<h3 style="margin-bottom:10px">Church Prayer Wall ('+data.length+')</h3>'+(data.length?data.map(p=>'<div class="record-row"><div class="record-main"><strong>'+escHtml(p.author_name||'Anonymous')+'</strong><div style="margin-top:7px;white-space:pre-wrap">'+escHtml(p.request)+'</div><small>'+escHtml(new Date(p.created_at).toLocaleString())+(p.answered?' · <b>Answered</b>':'')+'</small></div>'+(isPastor()?'<div class="record-actions"><button onclick="markPrayerAnswered(\''+p.id+'\','+(!p.answered)+')">'+(p.answered?'Reopen':'Mark Answered')+'</button><button class="danger" onclick="removePrayerPost(\''+p.id+'\')">Delete</button></div>':'')+'</div>').join(''):'<div class="empty-state">Wala pang prayer request. Maaari kang maunang mag-post.</div>');
+      };
+      window.submitPublicPrayer = async function(){
+        if(!requireSignedIn()) return;
+        const request=document.getElementById('publicPrayerText').value.trim();
+        const typedName=document.getElementById('publicPrayerName').value.trim();
+        if(!request){alert('Ilagay muna ang prayer request.');return;}
+        const user=currentUser();
+        const {error}=await client.from('prayer_wall_posts').insert({author_id:user.id,author_name:typedName||user.email||'Anonymous',request});
+        if(error){alert('Hindi naipost: '+error.message);return;}
+        document.getElementById('publicPrayerText').value=''; document.getElementById('publicPrayerName').value='';
+        await window.loadPublicPrayerWall(); alert('Naipost na ang prayer request sa Prayer Wall.');
+      };
+      window.markPrayerAnswered = async function(id,answered){ if(!isPastor()){alert('Pastor lang ang puwedeng mag-update ng prayer status.');return;} const {error}=await client.from('prayer_wall_posts').update({answered}).eq('id',id); if(error)alert(error.message); else window.loadPublicPrayerWall(); };
+      window.removePrayerPost = async function(id){ if(!isPastor()||!confirm('Burahin ang prayer post na ito?'))return; const {error}=await client.from('prayer_wall_posts').delete().eq('id',id); if(error)alert(error.message); else window.loadPublicPrayerWall(); };
+      window.sendPastorMessage = async function(){
+        if(!requireSignedIn())return;
+        const subject=document.getElementById('pastorMessageSubject').value.trim();
+        const message=document.getElementById('pastorMessageText').value.trim();
+        if(!message){alert('Isulat muna ang message o prayer request.');return;}
+        const user=currentUser();
+        const {error}=await client.from('pastor_messages').insert({sender_id:user.id,sender_name:user.email||'Church member',sender_email:user.email||'',subject,message});
+        if(error){alert('Hindi naipadala ang private message. Pakisigurong na-run ang SQL setup. '+error.message);return;}
+        document.getElementById('pastorMessageSubject').value=''; document.getElementById('pastorMessageText').value='';
+        alert('Naipadala na ang private message kay Pastor.'); await window.loadMyPastorMessages();
+      };
+      window.loadMyPastorMessages = async function(){
+        const target=document.getElementById('myPastorMessages'); if(!target||!requireSignedIn())return;
+        const {data,error}=await client.from('pastor_messages').select('id,subject,message,created_at,read_at').eq('sender_id',currentUser().id).order('created_at',{ascending:false}).limit(20);
+        if(error){target.innerHTML='<div class="empty-state">Hindi ma-load ang iyong sent messages.</div>';return;}
+        target.innerHTML='<h4 style="margin-bottom:8px;color:#52616b">My messages to Pastor</h4>'+(data.length?data.map(m=>'<div class="record-row"><div class="record-main"><strong>'+escHtml(m.subject||'Prayer request / Message')+'</strong><div style="margin-top:5px;white-space:pre-wrap">'+escHtml(m.message)+'</div><small>'+escHtml(new Date(m.created_at).toLocaleString())+' · '+(m.read_at?'Seen by Pastor':'Sent')+'</small></div></div>').join(''):'<div class="empty-state">Wala ka pang naipapadalang private message.</div>');
+      };
+      window.loadPastorInbox = async function(){
+        if(!isPastor())return;
+        const target=document.getElementById('pastorInboxList'); if(!target)return;
+        const {data,error}=await client.from('pastor_messages').select('id,sender_id,sender_name,sender_email,subject,message,created_at,read_at').order('created_at',{ascending:false}).limit(100);
+        if(error){target.innerHTML='<div class="empty-state">Hindi ma-load ang inbox: '+escHtml(error.message)+'</div>';return;}
+        const unread=data.filter(m=>!m.read_at).length;
+        document.getElementById('pastorUnreadCount').textContent=unread+' unread';
+        target.innerHTML=data.length?data.map(m=>'<div class="record-row"><div class="record-main"><strong>'+escHtml(m.sender_name||m.sender_email||'Church member')+'</strong> <span class="badge-'+(m.read_at?'inactive':'active')+'">'+(m.read_at?'Read':'New')+'</span><div style="color:#748091;font-size:11px;margin-top:4px">'+escHtml(m.sender_email||'')+' · '+escHtml(new Date(m.created_at).toLocaleString())+'</div><div style="font-weight:650;margin-top:8px">'+escHtml(m.subject||'Prayer request / Message')+'</div><div style="margin-top:5px;white-space:pre-wrap">'+escHtml(m.message)+'</div></div><div class="record-actions"><button onclick="markPastorMessageRead(\''+m.id+'\')">Mark Read</button><button onclick="replyToPastorMessage(\''+escHtml(m.sender_email||'')+'\')">Reply by Email</button></div></div>').join(''):'<div class="empty-state">Wala pang natatanggap na private messages.</div>';
+      };
+      window.markPastorMessageRead = async function(id){ if(!isPastor())return; const {error}=await client.from('pastor_messages').update({read_at:new Date().toISOString()}).eq('id',id); if(error)alert(error.message); else window.loadPastorInbox(); };
+      window.replyToPastorMessage = function(email){ if(!isPastor()||!email)return; window.location.href='mailto:'+encodeURIComponent(email)+'?subject='+encodeURIComponent('Re: Message to Pastor'); };
+      function setupRealtime(){
+        if(!client||!currentUser())return;
+        if(prayerChannel)client.removeChannel(prayerChannel);
+        prayerChannel=client.channel('church-prayer-wall').on('postgres_changes',{event:'*',schema:'public',table:'prayer_wall_posts'},()=>window.loadPublicPrayerWall()).subscribe();
+        if(isPastor()){
+          const card=document.getElementById('pastorInboxCard'); if(card)card.style.display='block';
+          if(inboxChannel)client.removeChannel(inboxChannel);
+          inboxChannel=client.channel('pastor-private-inbox').on('postgres_changes',{event:'INSERT',schema:'public',table:'pastor_messages'},payload=>{if(payload.new && !seenMessageIds.has(payload.new.id)){seenMessageIds.add(payload.new.id);notifyPastor('May bagong private message o prayer request.');}window.loadPastorInbox();}).subscribe();
+          window.loadPastorInbox();
+        } else { const card=document.getElementById('pastorInboxCard'); if(card)card.style.display='none'; }
+        window.loadPublicPrayerWall(); window.loadMyPastorMessages();
+      }
+      window.tcsSetupPrayerMessaging=setupRealtime;
+      // Realtime events notify the Pastor while the app is open; inbox also loads on login.
+      document.addEventListener('visibilitychange',()=>{if(!document.hidden&&currentUser()){window.loadPublicPrayerWall();if(isPastor())window.loadPastorInbox();}});
+    })();
+    </script>
+
+        <!-- PASTOR-ONLY EDIT PERMISSIONS: all non-pastor accounts are read-only -->
+    <script>
+    (function () {
+      window.tcsCurrentRole = null;
+      const pastorOnlyFunctions = [
+        'openAddModal','openEditModal','saveMember','processSave','deleteMember','clearAllMembers',
+        'addRecord','deleteRecord','togglePrayer','toggleTodo','addAttendance','checkOutAttendance',
+        'deleteAttendance','addGiving','deleteGiving','addResource','createNewUserAccount',
+        'toggle2FA','uploadUserPhoto'
+      ];
+      window.tcsIsPastor = function () { return window.tcsCurrentRole === 'pastor'; };
+      window.tcsRequirePastor = function () {
+        if (window.tcsIsPastor()) return true;
+        alert('View only ang account mo. Pastor lang ang may pahintulot magdagdag, mag-edit, o mag-delete ng records.');
+        return false;
+      };
+      window.applyPastorPermissions = function () {
+        const isPastor = window.tcsIsPastor();
+        // Hide all data-entry panels from staff and members; retain the records for viewing.
+        document.querySelectorAll('.page-view .section-card').forEach(card => {
+          const hasEntry = !!card.querySelector('input, select, textarea');
+          const hasAction = !!card.querySelector('button[onclick]');
+          if (hasEntry && hasAction && !card.hasAttribute('data-member-allowed')) card.style.display = isPastor ? '' : 'none';
+        });
+        // Hide directory create/clear controls and all generated record action buttons.
+        document.querySelectorAll('.directory-top-actions, .record-actions').forEach(el => {
+          el.style.display = isPastor ? '' : 'none';
+        });
+        document.querySelectorAll('button[onclick]').forEach(btn => {
+          const action = btn.getAttribute('onclick') || '';
+          if (/openAddModal|openEditModal|deleteMember|clearAllMembers|addRecord|deleteRecord|togglePrayer|toggleTodo|addAttendance|checkOutAttendance|deleteAttendance|addGiving|deleteGiving|addResource|createNewUserAccount|toggle2FA|uploadUserPhoto|saveMember/.test(action)) {
+            btn.style.display = isPastor ? '' : 'none';
+          }
+        });
+        const roleEl = document.querySelector('#page-myaccount .account-role');
+        if (roleEl && window.tcsCurrentRole) roleEl.textContent = window.tcsCurrentRole === 'pastor' ? 'Pastor · Full editing access' : (window.tcsCurrentRole === 'staff' ? 'Staff · View only' : 'Church Member · View only');
+      };
+      // Guard every data-changing function as well as hiding its controls.
+      pastorOnlyFunctions.forEach(name => {
+        const original = window[name];
+        if (typeof original !== 'function') return;
+        window[name] = function (...args) {
+          if (!window.tcsRequirePastor()) return false;
+          return original.apply(this, args);
+        };
+      });
+      // Re-apply after lists redraw and when the user navigates between sections.
+      ['renderMembers','renderModule','renderAttendance','renderGiving'].forEach(name => {
+        const original = window[name];
+        if (typeof original !== 'function') return;
+        window[name] = function (...args) {
+          const result = original.apply(this, args);
+          window.applyPastorPermissions();
+          return result;
+        };
+      });
+      const previousSwitchPage = window.switchPage;
+      if (typeof previousSwitchPage === 'function') {
+        window.switchPage = function (...args) {
+          const result = previousSwitchPage.apply(this, args);
+          window.applyPastorPermissions();
+          return result;
+        };
+      }
+      // Never grant editing rights before Supabase has verified a Pastor profile.
+      document.addEventListener('DOMContentLoaded', window.applyPastorPermissions);
+      window.addEventListener('load', window.applyPastorPermissions);
+    })();
+    </script>
+
+</body>
+</html>
