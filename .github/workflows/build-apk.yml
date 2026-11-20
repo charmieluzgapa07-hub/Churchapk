@@ -40,14 +40,11 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          accept-android-sdk-licenses: true
-          log-accepted-android-sdk-licenses: false
-
-      - name: Accept Android SDK Licenses
-        run: yes | sdkmanager --licenses
+      - name: Locate Android SDK
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          test -d "$ANDROID_HOME"
+          echo "Android SDK is available."
 
       - name: Extract Project ZIP
         run: |
@@ -56,23 +53,24 @@ jobs:
           ZIP_FILE=$(find . -maxdepth 1 -type f -iname '*.zip' -print -quit)
 
           if [ -z "$ZIP_FILE" ]; then
-            echo "ERROR: Project ZIP not found in repository root!"
+            echo "ERROR: Project ZIP not found!"
             exit 1
           fi
 
           unzip -q "$ZIP_FILE" -d extracted
 
-          PROJECT_DIR="$GITHUB_WORKSPACE/extracted/Together_Church_Skyline_GitHub_APK_Project"
+          PROJECT_DIR=$(find "$GITHUB_WORKSPACE/extracted" \
+            -mindepth 2 -maxdepth 3 \
+            -type f -name package.json \
+            -printf '%h\n' | head -n 1)
 
-          if [ ! -f "$PROJECT_DIR/package.json" ]; then
-            echo "ERROR: package.json not found!"
+          if [ -z "$PROJECT_DIR" ]; then
+            echo "ERROR: Project folder not found!"
             exit 1
           fi
 
-          if [ ! -f "$PROJECT_DIR/${{ matrix.source }}/index.html" ]; then
-            echo "ERROR: Selected HTML file not found!"
-            exit 1
-          fi
+          test -f "$PROJECT_DIR/capacitor.config.json"
+          test -f "$PROJECT_DIR/${{ matrix.source }}/index.html"
 
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
@@ -96,7 +94,8 @@ jobs:
           config.appId = '${{ matrix.app_id }}';
           config.appName = '${{ matrix.app_name }}';
           config.webDir = 'www';
-          fs.writeFileSync('capacitor.config.json', JSON.stringify(config, null, 2));
+          fs.writeFileSync('capacitor.config.json',
+            JSON.stringify(config, null, 2));
           "
 
       - name: Add Android Platform
@@ -109,7 +108,7 @@ jobs:
           cd "$PROJECT_DIR"
           npx cap sync android
 
-      - name: Add Android Permissions
+      - name: Add Microphone Permissions
         run: |
           cd "$PROJECT_DIR"
 
@@ -133,5 +132,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Together-Church-${{ matrix.variant }}-APK
-          path: extracted/Together_Church_Skyline_GitHub_APK_Project/android/app/build/outputs/apk/debug/app-debug.apk
+          path: ${{ env.PROJECT_DIR }}/android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
