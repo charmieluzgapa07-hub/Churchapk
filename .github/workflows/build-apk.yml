@@ -1,0 +1,88 @@
+
+name: Build Together Church APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Prepare Together Church files
+        run: |
+          mkdir -p www extracted
+
+          if [ -f index.html ]; then
+            cp -a . www/ 2>/dev/null || true
+          else
+            ZIP_FILE=$(find . -maxdepth 1 -name '*.zip' -print -quit)
+
+            if [ -z "$ZIP_FILE" ]; then
+              echo "ERROR: Walang ZIP file o index.html!"
+              exit 1
+            fi
+
+            unzip -q "$ZIP_FILE" -d extracted
+
+            INDEX_FILE=$(find extracted -type f -name index.html -print -quit)
+
+            if [ -z "$INDEX_FILE" ]; then
+              echo "ERROR: Walang index.html sa ZIP!"
+              exit 1
+            fi
+
+            WEB_DIR=$(dirname "$INDEX_FILE")
+            cp -a "$WEB_DIR"/. www/
+          fi
+
+          test -f www/index.html
+
+      - name: Initialize Capacitor
+        run: |
+          npm init -y
+          npm install @capacitor/core@7 @capacitor/cli@7 @capacitor/android@7
+
+          npx cap init "Together Church" "com.emilgapa.togetherchurch" --web-dir www
+
+          npx cap add android
+          npx cap sync android
+
+      - name: Add Android permissions
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+
+          if ! grep -q "android.permission.RECORD_AUDIO" "$MANIFEST"; then
+            sed -i '/<application/i\    <uses-permission android:name="android.permission.RECORD_AUDIO" />' "$MANIFEST"
+            sed -i '/<application/i\    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />' "$MANIFEST"
+          fi
+
+      - name: Build Android APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload Together Church APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Together-Church-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
