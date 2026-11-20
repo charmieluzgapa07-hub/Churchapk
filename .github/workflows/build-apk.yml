@@ -34,7 +34,7 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Setup Java
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -42,15 +42,21 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          accept-android-sdk-licenses: true
+          log-accepted-android-sdk-licenses: false
 
-      - name: Extract Together Church ZIP
+      - name: Accept Android SDK Licenses
+        run: yes | sdkmanager --licenses
+
+      - name: Extract Project ZIP
         run: |
           mkdir -p extracted
 
           ZIP_FILE=$(find . -maxdepth 1 -type f -iname '*.zip' -print -quit)
 
           if [ -z "$ZIP_FILE" ]; then
-            echo "ERROR: Upload the project ZIP to repository root."
+            echo "ERROR: Project ZIP not found in repository root!"
             exit 1
           fi
 
@@ -58,47 +64,64 @@ jobs:
 
           PROJECT_DIR="$GITHUB_WORKSPACE/extracted/Together_Church_Skyline_GitHub_APK_Project"
 
-          test -f "$PROJECT_DIR/package.json"
-          test -f "$PROJECT_DIR/capacitor.config.json"
-          test -f "$PROJECT_DIR/${{ matrix.source }}/index.html"
+          if [ ! -f "$PROJECT_DIR/package.json" ]; then
+            echo "ERROR: package.json not found!"
+            exit 1
+          fi
+
+          if [ ! -f "$PROJECT_DIR/${{ matrix.source }}/index.html" ]; then
+            echo "ERROR: Selected HTML file not found!"
+            exit 1
+          fi
 
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
-      - name: Install Capacitor
+      - name: Install Dependencies
         run: |
           cd "$PROJECT_DIR"
           npm install
           npm install @capacitor/android@6.2.1
 
-      - name: Prepare selected application
+      - name: Prepare Selected Application
         run: |
           cd "$PROJECT_DIR"
 
           mkdir -p www
+
           cp "${{ matrix.source }}/index.html" www/index.html
 
           node -e "
           const fs = require('fs');
-          const c = JSON.parse(fs.readFileSync('capacitor.config.json'));
-          c.appId = '${{ matrix.app_id }}';
-          c.appName = '${{ matrix.app_name }}';
-          c.webDir = 'www';
-          fs.writeFileSync('capacitor.config.json', JSON.stringify(c,null,2));
+          const config = JSON.parse(fs.readFileSync('capacitor.config.json'));
+          config.appId = '${{ matrix.app_id }}';
+          config.appName = '${{ matrix.app_name }}';
+          config.webDir = 'www';
+          fs.writeFileSync('capacitor.config.json', JSON.stringify(config, null, 2));
           "
 
-      - name: Add Android platform
+      - name: Add Android Platform
         run: |
           cd "$PROJECT_DIR"
           npx cap add android
-          npx cap sync android
 
-      - name: Add microphone permissions
+      - name: Sync Android
         run: |
           cd "$PROJECT_DIR"
+          npx cap sync android
+
+      - name: Add Android Permissions
+        run: |
+          cd "$PROJECT_DIR"
+
           MANIFEST="android/app/src/main/AndroidManifest.xml"
 
-          sed -i '/<application/i\    <uses-permission android:name="android.permission.RECORD_AUDIO" />' "$MANIFEST"
-          sed -i '/<application/i\    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />' "$MANIFEST"
+          if ! grep -q "android.permission.RECORD_AUDIO" "$MANIFEST"; then
+            sed -i '/<application/i\    <uses-permission android:name="android.permission.RECORD_AUDIO" />' "$MANIFEST"
+          fi
+
+          if ! grep -q "android.permission.MODIFY_AUDIO_SETTINGS" "$MANIFEST"; then
+            sed -i '/<application/i\    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />' "$MANIFEST"
+          fi
 
       - name: Build Android APK
         run: |
